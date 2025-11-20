@@ -245,6 +245,14 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         throw new Error(result.error || "Server-side processing failed");
       }
 
+      if (result.partialSuccess && result.failedFiles && result.failedFiles.length > 0) {
+        const failedFileNames = result.failedFiles.map((f: any) => f.fileName).join(", ");
+        toast(
+          `Warning: ${result.failedFiles.length} file(s) failed server-side processing: ${failedFileNames}`,
+          { type: "warning" }
+        );
+      }
+
       const sceneArchives = result.scenes.map((scene: any) => ({
         archive: base64ToBlob(scene.sceneArchive, "application/octet-stream"),
         fileName: scene.fileName,
