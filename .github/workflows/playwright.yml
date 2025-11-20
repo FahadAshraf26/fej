@@ -1,0 +1,217 @@
+name: Playwright Tests
+on:
+  pull_request:
+    branches: [develop]
+jobs:
+  test:
+    name: Run Playwright Tests
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SERVICE_STAGING_ROLE_KEY }}
+      NEXT_PUBLIC_GOOGLE_FONTS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_FONTS_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      PRODUCT_PRICE_ID: ${{ secrets.PRODUCT_PRICE_ID }}
+      REACT_APP_LICENSE: ${{ secrets.REACT_APP_LICENSE }}
+      MAILINATOR_API_KEY: ${{ secrets.MAILINATOR_API_KEY }}
+      USER_EMAIL: ${{ secrets.USER_EMAIL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_STAGING_ANON_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Install wait-on
+        run: yarn global add wait-on
+
+      - name: Install Playwright Chromium
+        run: yarn playwright install chromium --with-deps
+
+      - name: Build Next.js app
+        run: yarn build
+
+      - name: Run Playwright tests
+        run: |
+          yarn dev & npx wait-on http://localhost:3000
+          yarn playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright traces
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 30
+
+      - name: Parse test results and send to Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK || 'https://hooks.slack.com/services/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' }}
+        run: |
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+
+          # Initialize counters
+          TOTAL_TESTS=0
+          PASSED_TESTS=0
+          FAILED_TESTS=0
+
+          # Get test results from report.json
+          if [ -f "playwright-report/report.json" ]; then
+            TOTAL_TESTS=$(jq '.stats.expected' playwright-report/report.json || echo 0)
+            PASSED_TESTS=$(jq '[.suites[].suites[].specs[]? | select(.ok == true)] | length' playwright-report/report.json || echo 0)
+            FAILED_TESTS=$(jq '[.suites[].suites[].specs[]? | select(.ok == false)] | length' playwright-report/report.json || echo 0)
+
+            if [ "$TOTAL_TESTS" -eq 0 ]; then
+              TOTAL_TESTS=$(jq '[.suites[].suites[].specs[]?] | length' playwright-report/report.json || echo 0)
+            fi
+
+            # Extract failed test details
+            FAILED_TESTS_DETAILS=$(jq -r '
+              [.suites[].suites[].specs[]? |
+                select(.ok == false) |
+                {
+                  title: .title,
+                  file: .file,
+                  error: .tests[0].results[0].error.message,
+                  duration: .tests[0].results[0].duration
+                }
+              ]' playwright-report/report.json || echo "[]")
+
+            STATUS_EMOJI=$([ "$FAILED_TESTS" -eq 0 ] && echo ":white_check_mark:" || echo ":x:")
+            STATUS="$STATUS_EMOJI $([ "$FAILED_TESTS" -eq 0 ] && echo "SUCCESS" || echo "FAILURE")"
+          else
+            STATUS=":warning: ERROR (No report generated)"
+            FAILED_TESTS_DETAILS="[]"
+          fi
+
+          # GitHub context URLs
+          GITHUB_RUN_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          ARTIFACT_URL="$GITHUB_RUN_URL/artifacts/$GITHUB_RUN_ID"
+
+          # Use branch name as "tag"
+          TAGS="${GITHUB_REF_NAME:-no-tag}"
+
+          # Create base Slack message
+          BASE_MESSAGE=$(jq -n \
+            --arg status "$STATUS" \
+            --arg total "$TOTAL_TESTS" \
+            --arg passed "$PASSED_TESTS" \
+            --arg failed "$FAILED_TESTS" \
+            --arg run_url "$GITHUB_RUN_URL" \
+            --arg artifact_url "$ARTIFACT_URL" \
+            --arg tags "$TAGS" \
+            '{
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":playwright: *Playwright Test Results*"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n\($status)"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Tags:*\n\($tags)"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Total Tests:*\n\($total)"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Passed:*\n\($passed)"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Failed:*\n\($failed)"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                }
+              ]
+            }')
+
+          # Add failed test details if any
+          if [ "$FAILED_TESTS" -gt 0 ]; then
+            FAILED_DETAILS_BLOCK=$(jq -n \
+              --argjson failed_details "$FAILED_TESTS_DETAILS" \
+              '{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Failed Tests Details:*"
+                }
+              }')
+
+            FAILED_TESTS_BLOCKS=$(echo "$FAILED_TESTS_DETAILS" | jq -r '.[] | {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "• *\(.title)*\n  File: `\(.file)`\n  Error: `\(.error)`\n  Duration: \(.duration)ms"
+              }
+            }' | jq -s .)
+
+            SLACK_MESSAGE=$(echo "$BASE_MESSAGE" | jq --argjson failed_block "$FAILED_DETAILS_BLOCK" --argjson failed_tests "$FAILED_TESTS_BLOCKS" '.blocks += [$failed_block] + $failed_tests')
+          else
+            SUCCESS_BLOCK=$(jq -n '{
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*All tests passed successfully!* :tada:"
+              }
+            }')
+            SLACK_MESSAGE=$(echo "$BASE_MESSAGE" | jq --argjson success_block "$SUCCESS_BLOCK" '.blocks += [$success_block]')
+          fi
+
+          # Add final divider and links
+          FINAL_BLOCKS=$(jq -n '[
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Links*\n<\($run_url)|View Workflow Run> | <\($artifact_url)|View Artifacts>"
+              }
+            }
+          ]' --arg run_url "$GITHUB_RUN_URL" --arg artifact_url "$ARTIFACT_URL")
+
+          SLACK_MESSAGE=$(echo "$SLACK_MESSAGE" | jq --argjson final_blocks "$FINAL_BLOCKS" '.blocks += $final_blocks')
+
+          # Send to Slack
+          curl -X POST -H 'Content-type: application/json' \
+            --data "$SLACK_MESSAGE" \
+            "$SLACK_WEBHOOK"

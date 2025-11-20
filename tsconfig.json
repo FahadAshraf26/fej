@@ -1,0 +1,92 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./",
+    "paths": {
+      "@Components/*": [
+        "components/*"
+      ],
+      "@Config/*": [
+        "config/*"
+      ],
+      "@controllers/*": [
+        "backend/controllers/*"
+      ],
+      "@Helpers/*": [
+        "helpers/*"
+      ],
+      "@Hooks/*": [
+        "hooks/*"
+      ],
+      "@Interfaces/*": [
+        "interfaces/index"
+      ],
+      "@Effects/*": [
+        "effects/*"
+      ],
+      "@Contants/*": [
+        "Constants/*"
+      ],
+      "@Context/*": [
+        "context/*"
+      ],
+      "@database/*": [
+        "supabase/*"
+      ],
+      "@Public/*": [
+        "public/*"
+      ],
+      "@services/*": [
+        "backend/services/*"
+      ],
+      "@repositories/*": [
+        "./backend/repositories/*"
+      ],
+      "@errors/*": [
+        "utils/errors/*"
+      ],
+      "@Stores/*": [
+        "stores/*"
+      ],
+      "@middleware/*": [
+        "backend/middleware/*"
+      ],
+      "@utils/*": [
+        "backend/utils/*"
+      ],
+      "@Utils/*": [
+        "utils/*"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "components/Editor/stores/MenuStore",
+    "components/Editor/Sidebar/PageSidebar/LayoutTab/SectionGridLayout.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

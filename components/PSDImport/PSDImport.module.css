@@ -1,0 +1,66 @@
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.psdImportZone {
+  transition: all 0.2s ease;
+}
+
+.psdImportZone:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.psdImportZone:active {
+  transform: translateY(0);
+}
+
+.psdIcon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.statusIcon {
+  transition: all 0.3s ease;
+}
+
+.statusIcon.success {
+  animation: successPulse 0.6s ease-out;
+}
+
+.statusIcon.error {
+  animation: errorShake 0.5s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}

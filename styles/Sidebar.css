@@ -1,0 +1,100 @@
+.drawerContainer {
+  position: fixed;
+  top: 111px;
+  height: calc(100vh - 111px);
+  left: -100%;
+  width: 30vw;
+  min-width: 450px;
+  max-width: 560px;
+  overflow: scroll;
+  background-color: #f7f7f8;
+  transition-duration: 0.9s;
+  z-index: 100;
+  padding-top: 6px;
+  padding-left: 12px;
+}
+.drawerContainerOpen {
+  left: 72px;
+}
+.sidebar-menu-name {
+  display: flex;
+  padding: 16px 20px;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+  border-bottom: 1px solid #e3e5e8;
+  background: #f7f7f8;
+}
+.icon-button {
+  border-radius: 6px;
+  border: 1px solid var(--border-decoration, #e3e5e8);
+  background: var(--container-00, #fff);
+  cursor: pointer;
+  display: flex;
+  width: 32px;
+  height: 32px;
+  padding: 5;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.icon-btn-disabled {
+  border-color: #abb0ba;
+  background-color: #d5d7dd;
+}
+.menu-name-editable {
+  display: -webkit-box;
+  /* -webkit-box-orient: vertical; */
+  -webkit-line-clamp: 1;
+  flex: 1 0 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 5px 14px 5px 0px;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  border: 2px solid transparent;
+}
+.menu-name-editable:focus {
+  outline: none;
+  border-color: rgba(20, 50, 77, 0.6);
+  background: var(--container-00, #fff);
+  padding: 5px 14px;
+}
+.fj-column-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0px;
+}
+.fj-column-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+.fj-column-text {
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 1.92px;
+}
+@media screen and (max-width: 599px) {
+  .drawerContainer {
+    left: 0;
+    top: 167px;
+    height: calc(100vh - 237px);
+  }
+}
+
+.layout-card {
+  height: 150px;
+  width: 180px;
+  position: relative;
+  /* padding: 16px; */
+  border: 1px solid #e0e0e0;
+}
+.layout-card-active {
+  border: 3px solid #d57a5e;
+}
