@@ -107,10 +107,10 @@ export default async function handler(
         console.log(`[Server PSD] Initializing CreativeEngine...`);
         
         fileEngine = await CreativeEngine.init({ license });
-        console.log(`[Server PSD] Engine initialized, creating design scene...`);
+        console.log(`[Server PSD] Engine initialized, creating scene...`);
         
-        await fileEngine.createDesignScene();
-        console.log(`[Server PSD] Design scene created`);
+        const scene = fileEngine.scene.create();
+        console.log(`[Server PSD] Scene created with handle: ${scene}`);
 
 
         const fileBuffer = await fs.readFile(psdFile.filepath);
