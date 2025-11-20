@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@cesdk/cesdk-js": "1.41.0",
+    "@cesdk/node": "^1.63.1",
     "@emotion/react": "^11.13.3",
     "@emotion/server": "^11.11.0",
     "@imgly/psd-importer": "^0.0.12",
@@ -48,6 +49,7 @@
     "next": "^12.3.3",
     "nextjs-google-analytics": "^2.2.2",
     "pipedrive": "^28.0.2",
+    "pngjs": "^7.0.0",
     "react": "18.2.0",
     "react-beautiful-dnd": "13.1.1",
     "react-dom": "18.2.0",
