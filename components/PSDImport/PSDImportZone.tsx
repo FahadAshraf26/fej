@@ -15,6 +15,7 @@ import { IconUpload, IconFile, IconAlertCircle, IconCheck, IconX } from "@tabler
 import useUploadStore from "../../stores/upload/upload.store";
 import { getLargeFileSuggestions } from "../../helpers/PSDFileSuggestions";
 import { ReorderablePSDList, PSDFileItem } from "./ReorderablePSDList";
+import { base64ToBlob } from "../../helpers/base64Utils";
 
 interface PSDImportZoneProps {
   onPSDImport: (scene: any) => void;
@@ -221,6 +222,75 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
     []
   );
 
+  const processOnServer = useCallback(
+    async (fileList: PSDFileItem[]): Promise<Array<{ archive: Blob; fileName: string }>> => {
+      const formData = new FormData();
+      fileList.forEach((item) => {
+        formData.append("psds", item.file);
+      });
+
+      const response = await fetch("/api/import/process-psd-server", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Server-side processing failed");
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Server-side processing failed");
+      }
+
+      const sceneArchives = result.scenes.map((scene: any) => ({
+        archive: base64ToBlob(scene.sceneArchive, "application/octet-stream"),
+        fileName: scene.fileName,
+      }));
+
+      return sceneArchives;
+    },
+    []
+  );
+
+  const processOnClient = useCallback(
+    async (fileList: PSDFileItem[]): Promise<Array<{ archive: Blob; fileName: string }>> => {
+      const processResults = await Promise.all(
+        fileList.map((fileItem) => processPSDFile(fileItem.file, fileItem.id))
+      );
+
+      const sceneArchives: Array<{ archive: Blob; fileName: string }> = [];
+      const errorFiles: string[] = [];
+
+      processResults.forEach((result, index) => {
+        if (result.success && result.sceneArchive) {
+          sceneArchives.push({
+            archive: result.sceneArchive,
+            fileName: fileList[index].file.name,
+          });
+        } else {
+          errorFiles.push(fileList[index].file.name);
+        }
+      });
+
+      if (errorFiles.length > 0 && sceneArchives.length === 0) {
+        throw new Error(`Failed to process all files: ${errorFiles.join(", ")}`);
+      }
+
+      if (errorFiles.length > 0) {
+        toast(
+          `Warning: ${errorFiles.length} file(s) failed to process: ${errorFiles.join(", ")}`,
+          { type: "warning" }
+        );
+      }
+
+      return sceneArchives;
+    },
+    [processPSDFile]
+  );
+
   const processAndMergeFiles = useCallback(
     async (fileList: PSDFileItem[]) => {
       if (!fileList || fileList.length === 0) return;
@@ -234,37 +304,28 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
       setUploadProgress(0);
 
       try {
-        toast(`Processing ${fileList.length} PSD file${fileList.length > 1 ? "s" : ""}...`, {
-          type: "info",
-        });
+        const totalSize = fileList.reduce((sum, f) => sum + f.file.size, 0);
+        const largeSizeThreshold = 50 * 1024 * 1024;
 
-        const processResults = await Promise.all(
-          fileList.map((fileItem) => processPSDFile(fileItem.file, fileItem.id))
-        );
+        let sceneArchives: Array<{ archive: Blob; fileName: string }> = [];
 
-        const sceneArchives: Array<{ archive: Blob; fileName: string }> = [];
-        const errorFiles: string[] = [];
-
-        processResults.forEach((result, index) => {
-          if (result.success && result.sceneArchive) {
-            sceneArchives.push({
-              archive: result.sceneArchive,
-              fileName: fileList[index].file.name,
-            });
-          } else {
-            errorFiles.push(fileList[index].file.name);
-          }
-        });
-
-        if (errorFiles.length > 0 && sceneArchives.length === 0) {
-          throw new Error(`Failed to process all files: ${errorFiles.join(", ")}`);
-        }
-
-        if (errorFiles.length > 0) {
+        if (totalSize > largeSizeThreshold) {
           toast(
-            `Warning: ${errorFiles.length} file(s) failed to process: ${errorFiles.join(", ")}`,
-            { type: "warning" }
+            `Processing large files (${(totalSize / (1024 * 1024)).toFixed(
+              1
+            )}MB) on server for better performance...`,
+            { type: "info" }
           );
+
+          sceneArchives = await processOnServer(fileList);
+
+          toast("Server processing complete! Merging pages...", { type: "info" });
+        } else {
+          toast(`Processing ${fileList.length} PSD file${fileList.length > 1 ? "s" : ""}...`, {
+            type: "info",
+          });
+
+          sceneArchives = await processOnClient(fileList);
         }
 
         if (sceneArchives.length === 0) {
@@ -341,7 +402,7 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         setIsProcessing(false);
       }
     },
-    [processPSDFile, onPSDImport, onError]
+    [processOnClient, processOnServer, onPSDImport, onError]
   );
 
   const handleFilesAdded = (selectedFiles: File[]) => {
