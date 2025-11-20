@@ -54,11 +54,18 @@ export default async function handler(
   let engine: any = null;
 
   try {
+    console.log("[Server PSD] Starting import of modules...");
+    
     const [{ default: CE }, psdImporter, pngjs] = await Promise.all([
       import("@cesdk/node"),
       import("@imgly/psd-importer"),
       import("pngjs"),
     ]);
+
+    console.log("[Server PSD] Modules imported successfully");
+    console.log("[Server PSD] CE:", typeof CE);
+    console.log("[Server PSD] PSDParser:", typeof psdImporter?.PSDParser);
+    console.log("[Server PSD] createPNGJSEncodeBufferToPNG:", typeof psdImporter?.createPNGJSEncodeBufferToPNG);
 
     CreativeEngine = CE;
     PSDParser = psdImporter.PSDParser;
@@ -82,7 +89,9 @@ export default async function handler(
 
     const psdFiles = Array.isArray(files.psds) ? files.psds : [files.psds];
 
-    const license = serverRuntimeConfig.REACT_APP_LICENSE || process.env.REACT_APP_LICENSE;
+    const license = serverRuntimeConfig?.REACT_APP_LICENSE || process.env.REACT_APP_LICENSE;
+    console.log("[Server PSD] License available:", !!license);
+    
     if (!license) {
       throw new Error("Missing REACT_APP_LICENSE environment variable");
     }
@@ -94,8 +103,15 @@ export default async function handler(
       let fileEngine: any = null;
       
       try {
+        console.log(`[Server PSD] Processing file: ${psdFile.originalFilename}`);
+        console.log(`[Server PSD] Initializing CreativeEngine...`);
+        
         fileEngine = await CreativeEngine.init({ license });
+        console.log(`[Server PSD] Engine initialized, creating design scene...`);
+        
         await fileEngine.createDesignScene();
+        console.log(`[Server PSD] Design scene created`);
+
 
         const fileBuffer = await fs.readFile(psdFile.filepath);
 
@@ -163,7 +179,8 @@ export default async function handler(
       scenes: processedScenes,
     });
   } catch (error) {
-    console.error("Server-side PSD processing error:", error);
+    console.error("[Server PSD] Fatal error:", error);
+    console.error("[Server PSD] Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
     return res.status(500).json({
       success: false,
