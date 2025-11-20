@@ -64,6 +64,22 @@ export const UserContextProvider = ({ children }: Props) => {
   const supabaseUser = useUser();
   const session = useSession();
 
+  // If Supabase is not configured, render children with unauthenticated state
+  if (!supabase) {
+    return (
+      <UserContext.Provider
+        value={{
+          user: null,
+          supabaseUser: null,
+          isAuthenticated: false,
+          isLoading: false,
+        }}
+      >
+        {children}
+      </UserContext.Provider>
+    );
+  }
+
   useEffect(() => {
     if (!isSessionLoading) {
       setIsAuthenticated(!!supabaseUser);

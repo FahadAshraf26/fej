@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { useState, useEffect } from "react";
 import { AppProps } from "next/app";
 import Head from "next/head";
-import { MantineProvider, AppShell } from "@mantine/core";
+import { MantineProvider, AppShell, Text, Container, Center, Stack } from "@mantine/core";
 import { SessionContextProvider, Session } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import theme from "../config/theme";
@@ -15,7 +15,7 @@ import { SubscriptionProvider } from "../context/SubscriptionContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NetworkStatus from "@Components/Editor/NetworkStatus";
-import { supabase } from "@database/client.connection";
+import { supabase, hasSupabaseConfig } from "@database/client.connection";
 import PaymentFailureBanner from "@Components/billing/PaymentFailureBanner";
 import WhitelistBanner from "@Components/WhitelistBanner";
 import "../lib/container";
@@ -137,6 +137,43 @@ export default function App({
     router.pathname.includes("checkout") || router.pathname.startsWith("/subscription/");
   const isTemplatesRoute = router.pathname.includes("templates");
 
+  // Show configuration warning if Supabase is not configured
+  if (!hasSupabaseConfig()) {
+    return (
+      <>
+        <Head>
+          <title>Flapjack - Configuration Required</title>
+          <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
+        </Head>
+        <MantineProvider withGlobalStyles withNormalizeCSS theme={theme}>
+          <Center style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+            <Container size="sm">
+              <Stack spacing="lg" align="center">
+                <Text size="xl" weight={700} color="orange">
+                  ⚙️ Configuration Required
+                </Text>
+                <Text align="center" color="dimmed">
+                  This application requires environment variables to be configured in Replit Secrets.
+                </Text>
+                <Text align="center" size="sm" style={{ fontFamily: 'monospace', backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                  Please add the following required environment variables:<br /><br />
+                  • NEXT_PUBLIC_SUPABASE_URL<br />
+                  • NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY<br />
+                  • SUPABASE_SECRET_KEY<br />
+                  • STRIPE_SECRET_KEY<br />
+                  • And other required credentials
+                </Text>
+                <Text align="center" size="xs" color="dimmed">
+                  Go to Tools → Secrets in Replit to add your environment variables.
+                </Text>
+              </Stack>
+            </Container>
+          </Center>
+        </MantineProvider>
+      </>
+    );
+  }
+
   return (
     <>
       <Head>
@@ -146,7 +183,7 @@ export default function App({
       <MantineProvider withGlobalStyles withNormalizeCSS theme={theme}>
         <NotificationsProvider position="top-right" zIndex={2077}>
           <SessionContextProvider
-            supabaseClient={supabase}
+            supabaseClient={supabase!}
             initialSession={pageProps.initialSession}
           >
             <UserContextProvider>

@@ -15,4 +15,4 @@ function createStripeClient(): Stripe | null {
   });
 }
 
-export const stripe = createStripeClient()!;
+export const stripe = createStripeClient();

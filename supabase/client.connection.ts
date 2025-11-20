@@ -14,4 +14,5 @@ function createSupabaseClient(): SupabaseClient | null {
   );
 }
 
-export const supabase = createSupabaseClient()!;
+export const supabase = createSupabaseClient();
+export type SupabaseClientType = SupabaseClient | null;
