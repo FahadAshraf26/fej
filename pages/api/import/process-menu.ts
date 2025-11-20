@@ -13,6 +13,11 @@ export const config = {
 export const maxDuration = 120; // Allow function to run for up to 2 minutes
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Check if Supabase is configured
+  if (!supabase) {
+    return res.status(503).json({ error: "Database configuration missing" });
+  }
+
   // Get the auth token from the request headers
   const authHeader = req.headers.authorization;
   if (!authHeader) {
