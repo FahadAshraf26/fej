@@ -2,6 +2,14 @@ import { ImportController } from "../../../backend/controllers/ImportController"
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@database/client.connection";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "900mb",
+    },
+  },
+};
+
 export const maxDuration = 120; // Allow function to run for up to 2 minutes
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

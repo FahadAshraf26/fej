@@ -22,14 +22,7 @@ const nextConfig = {
     ].filter(Boolean),
   },
   env: {
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    PRODUCT_PRICE_ID: process.env.PRODUCT_PRICE_ID,
     REACT_APP_LICENSE: process.env.REACT_APP_LICENSE,
-    TWILLO_PHONE: process.env.TWILLO_PHONE,
-    SENTRY_DSN_KEY: process.env.SENTRY_DSN_KEY,
-    SITE_DOMAIN: process.env.SITE_DOMAIN,
-    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
   },
   compiler: {
     removeConsole: false,
@@ -37,6 +30,13 @@ const nextConfig = {
   serverRuntimeConfig: {
     ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    PRODUCT_PRICE_ID: process.env.PRODUCT_PRICE_ID,
+    TWILLO_PHONE: process.env.TWILLO_PHONE,
+    SENTRY_DSN_KEY: process.env.SENTRY_DSN_KEY,
+    SITE_DOMAIN: process.env.SITE_DOMAIN,
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
   },
 };
 
