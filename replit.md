@@ -4,19 +4,6 @@
 This is a Next.js 12 application for restaurant menu design and management with PSD import functionality, Stripe payments, and Supabase authentication.
 
 ## Recent Changes (November 20, 2025)
-### Hybrid Client/Server PSD Processing (Latest)
-- **Smart Processing Router**: Automatically routes PSD files to optimal processor based on file size
-  - **Small files (<50MB)**: Processed client-side for instant feedback
-  - **Large files (>50MB)**: Processed server-side using @cesdk/node for reliability
-- **Server-Side Processing**: New API route `/api/import/process-psd-server.ts` handles large PSD files
-  - Uses `@cesdk/node` for headless server-side Creative Engine processing
-  - Uses `pngjs` for Node.js-compatible PNG encoding
-  - Supports up to 900MB file uploads
-  - Returns processed scene archives to client for merging
-- **Enhanced Components**:
-  - `components/PSDImport/PSDImportZone.tsx` - Added `processOnServer()` and `processOnClient()` methods
-  - `helpers/base64Utils.ts` - New utility for base64/blob conversions
-- **Benefits**: Better performance for large files, prevents browser crashes, consistent server-side processing
 
 ### Multiple PSD Import with Reordering
 - **New Feature**: Implemented multiple PSD import where each PSD becomes a separate page in the menu
@@ -45,23 +32,16 @@ This is a Next.js 12 application for restaurant menu design and management with 
 - **Database**: Supabase (PostgreSQL)
 - **Payments**: Stripe
 - **File Storage**: Supabase Storage with TUS resumable uploads
-- **Design Engine**: 
-  - Client-side: Creative Engine SDK (@cesdk/cesdk-js)
-  - Server-side: Creative Engine for Node.js (@cesdk/node)
-- **PSD Processing**: @imgly/psd-importer with hybrid client/server architecture
-- **Image Processing**: pngjs for server-side PNG encoding
+- **Design Engine**: Creative Engine SDK (@cesdk/cesdk-js)
+- **PSD Processing**: @imgly/psd-importer (client-side)
 
 ### Core Features
-1. **Hybrid PSD Processing**: Intelligent routing between client-side and server-side processing
-   - Client-side processing for files <50MB (instant feedback)
-   - Server-side processing for files >50MB (handles up to 900MB)
-   - Automatic detection and optimal processor selection
-2. **Multiple PSD Import with Reordering**: Upload multiple PSD files, drag-and-drop to reorder, and create multi-page menus where each PSD becomes a separate page in the order you specify
-3. **PSD Processing**: Process and import Adobe Photoshop files into editable templates using @imgly/psd-importer
-4. **Template Management**: Create, edit, and manage restaurant menu templates
-5. **Authentication**: Supabase-based user authentication
-6. **Subscription Management**: Stripe integration for billing
-7. **Image Optimization**: Tinify API for image compression
+1. **Multiple PSD Import with Reordering**: Upload multiple PSD files, drag-and-drop to reorder, and create multi-page menus where each PSD becomes a separate page in the order you specify
+2. **PSD Processing**: Process and import Adobe Photoshop files into editable templates using @imgly/psd-importer
+3. **Template Management**: Create, edit, and manage restaurant menu templates
+4. **Authentication**: Supabase-based user authentication
+5. **Subscription Management**: Stripe integration for billing
+6. **Image Optimization**: Tinify API for image compression
 
 ## Configuration
 
