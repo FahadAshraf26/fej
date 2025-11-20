@@ -5,6 +5,15 @@ This is a Next.js 12 application for restaurant menu design and management with 
 
 ## Recent Changes (November 20, 2025)
 
+### Fixed Asset Embedding in Multi-PSD Import (Latest)
+- **Root Cause**: `block.saveToString()` doesn't embed images by default - only stores asset URIs which become invalid when loaded
+- **Solution**: Two-phase approach:
+  1. Save each processed PSD as a complete scene archive (which embeds all assets)
+  2. Extract pages by loading archives into temp engines, then transfer children using `saveToString` with base64 callback
+- **Impact**: Images and assets now properly embedded when merging multiple PSD files into a scene
+- **Technical**: Archives ensure asset persistence, base64 conversion handles cross-engine transfer
+- **File**: `components/PSDImport/PSDProcessor.tsx`
+
 ### Multiple PSD Import with Reordering
 - **New Feature**: Implemented multiple PSD import where each PSD becomes a separate page in the menu
 - **Drag-and-Drop Reordering**: Added ReorderablePSDList component using react-beautiful-dnd for intuitive page ordering

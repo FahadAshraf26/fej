@@ -138,8 +138,8 @@ export class PSDProcessor {
 
     try {
       // Step 1: Process all inputs (either parse PSD files or load scene archives)
-      // Save all pages as strings (with embedded assets) for later loading
-      const pageStrings: Array<{ pageString: string; fileName: string }> = [];
+      // Save all scenes as archives (which properly embed assets) for later loading
+      const pageStrings: Array<{ pageString?: string; fileName: string; archive?: Blob }> = [];
 
       // Import PSD importer utilities
       const { PSDParser, createWebEncodeBufferToPNG, addGoogleFontsAssetLibrary } = await import(
@@ -186,6 +186,12 @@ export class PSDProcessor {
             if (!result) {
               throw new Error(`Failed to parse PSD file: ${fileName}`);
             }
+
+            // Verify scene has pages with content
+            const parsedPages = tempEngine.block.findByType("page");
+            if (!parsedPages || parsedPages.length === 0) {
+              throw new Error(`No pages found after parsing ${fileName}`);
+            }
           } else if (archive) {
             // If we have a pre-processed archive, load it directly
             // No need to add Google Fonts here as they should already be in the archive
@@ -205,34 +211,17 @@ export class PSDProcessor {
             throw new Error("Block module not available after processing.");
           }
 
-          const pages = tempEngine.block.findByType("page");
-
-          if (pages && pages.length > 0) {
-            for (const sourcePageId of pages) {
-              try {
-                const pageType = tempEngine.block.getType(sourcePageId);
-                const pageBlockType = "//ly.img.ubq/page";
-
-                if (pageType !== pageBlockType) {
-                  console.warn(
-                    `Block ${sourcePageId} is not a page block (type: ${pageType}), skipping`
-                  );
-                  continue;
-                }
-
-                // Save the entire page block as a string (with embedded assets)
-                const pageString = await tempEngine.block.saveToString([sourcePageId]);
-                pageStrings.push({ pageString, fileName });
-                console.log(
-                  `Saved page from ${fileName} as string, length: ${pageString.length} characters`
-                );
-              } catch (pageError) {
-                console.error(`Error saving page from ${fileName}:`, pageError);
-              }
-            }
-          } else {
-            pageNames.push(fileName.replace(".psd", "") || `Page ${i + 1}`);
-          }
+          // Save the entire scene as an archive (all pages and assets included)
+          const tempPageArchive = await tempEngine.scene.saveToArchive();
+          
+          pageStrings.push({ 
+            fileName,
+            archive: tempPageArchive 
+          });
+          
+          console.log(
+            `Saved scene from ${fileName} as archive with embedded assets, size: ${tempPageArchive.size} bytes`
+          );
         } catch (error) {
           console.error(
             `Error processing ${file ? "PSD file" : "scene archive"} ${fileName}:`,
@@ -267,55 +256,124 @@ export class PSDProcessor {
 
       console.log(`Created new empty scene with root ${sceneRoot}`);
 
-      // Step 3: Load all pages into the new scene and append them
+      // Step 3: Load each archive, extract pages as complete scene archives
+      // Since CESDK can't merge scenes directly, we save each page as its own archive
+      const pageArchives: Array<{ archive: Blob; fileName: string }> = [];
+      
       for (let i = 0; i < pageStrings.length; i++) {
-        const { pageString, fileName } = pageStrings[i];
+        const { archive, fileName } = pageStrings[i];
+
+        if (!archive) {
+          console.error(`No archive for ${fileName}, skipping`);
+          continue;
+        }
 
         try {
-          // Load the page block directly from string into the merged scene
-          const loadedPageBlocks = await mergedEngine.block.loadFromString(pageString);
-
-          if (!loadedPageBlocks || loadedPageBlocks.length === 0) {
-            throw new Error(`Failed to load page block from ${fileName}`);
+          // For single-page PSDs, just use the archive as-is
+          // For multi-page PSDs, we already have the full scene archive
+          pageArchives.push({ archive, fileName });
+          console.log(`Added archive for ${fileName}, size: ${archive.size} bytes`);
+        } catch (error) {
+          console.error(`Error processing archive for ${fileName}:`, error);
+        }
+      }
+      
+      if (pageArchives.length === 0) {
+        throw new Error("No archives were processed successfully");
+      }
+      
+      // If there's only one file, just use its archive directly
+      if (pageArchives.length === 1) {
+        console.log("Single PSD file - using archive directly");
+        const singleArchive = pageArchives[0].archive;
+        pageNames.push(pageArchives[0].fileName.replace(".psd", ""));
+        
+        return {
+          sceneArchive: singleArchive,
+          messages: allMessages,
+          pageNames,
+        };
+      }
+      
+      // For multiple files, load each archive and rebuild a merged scene
+      // Step 4: Load first archive as the base
+      const firstArchiveUrl = URL.createObjectURL(pageArchives[0].archive);
+      await mergedEngine.scene.loadFromArchiveURL(firstArchiveUrl);
+      URL.revokeObjectURL(firstArchiveUrl);
+      
+      const firstPages = mergedEngine.scene.getPages();
+      for (const pageId of firstPages) {
+        const pageName = pageArchives[0].fileName.replace(".psd", "");
+        mergedEngine.block.setName(pageId, pageName);
+        pageNames.push(pageName);
+      }
+      
+      console.log(`Loaded first archive (${pageArchives[0].fileName}) with ${firstPages.length} pages`);
+      
+      // Step 5: For each additional archive, load it and transfer pages
+      for (let i = 1; i < pageArchives.length; i++) {
+        const { archive, fileName } = pageArchives[i];
+        
+        try {
+          // Create a temporary engine to load this archive
+          const tempEngine = await this.createTemporaryEngine();
+          
+          const archiveUrl = URL.createObjectURL(archive);
+          await tempEngine.scene.loadFromArchiveURL(archiveUrl);
+          URL.revokeObjectURL(archiveUrl);
+          
+          const tempPages = tempEngine.scene.getPages();
+          console.log(`Loaded ${fileName} into temp engine, has ${tempPages.length} pages`);
+          
+          // For each page, export it and import into merged scene
+          for (const tempPageId of tempPages) {
+            // Export the page as PNG to get rendered content
+            const pageArchiveBlob = await tempEngine.scene.saveToArchive();
+            
+            // Load into a second temp engine to extract just this page
+            const extractEngine = await this.createTemporaryEngine();
+            const extractUrl = URL.createObjectURL(pageArchiveBlob);
+            await extractEngine.scene.loadFromArchiveURL(extractUrl);
+            URL.revokeObjectURL(extractUrl);
+            
+            const extractedPages = extractEngine.scene.getPages();
+            if (extractedPages.length > 0) {
+              const sourcePage = extractedPages[0];
+              
+              // Create new page in merged scene
+              const newPage = mergedEngine.block.create("page");
+              mergedEngine.block.setWidth(newPage, extractEngine.block.getWidth(sourcePage));
+              mergedEngine.block.setHeight(newPage, extractEngine.block.getHeight(sourcePage));
+              
+              // Copy all children
+              const children = extractEngine.block.getChildren(sourcePage);
+              for (const childId of children) {
+                const childArchive = await extractEngine.block.saveToString([childId]);
+                const loadedChildren = await mergedEngine.block.loadFromString(childArchive);
+                if (loadedChildren && loadedChildren.length > 0) {
+                  mergedEngine.block.appendChild(newPage, loadedChildren[0]);
+                }
+              }
+              
+              // Add page to merged scene
+              const sceneRoot = mergedEngine.scene.get();
+              mergedEngine.block.appendChild(sceneRoot, newPage);
+              
+              const pageName = fileName.replace(".psd", "");
+              mergedEngine.block.setName(newPage, pageName);
+              pageNames.push(pageName);
+            }
+            
+            await extractEngine.dispose();
           }
-
-          const loadedPageId = loadedPageBlocks[0];
-
-          console.log(`Loaded page block ${loadedPageId} from ${fileName}`);
-
-          // Verify it's actually a page
-          const loadedPageType = mergedEngine.block.getType(loadedPageId);
-          const pageBlockType = "//ly.img.ubq/page";
-          if (loadedPageType !== pageBlockType) {
-            console.warn(
-              `Loaded block type mismatch: ${loadedPageType}, expected ${pageBlockType}`
-            );
-            continue;
-          }
-
-          // Append the page to the scene root
-          mergedEngine.block.appendChild(sceneRoot, loadedPageId);
-
-          // Set page name
-          const pageName = fileName.replace(".psd", "") || `Page ${i + 1}`;
-          try {
-            mergedEngine.block.setName(loadedPageId, pageName);
-          } catch (nameError) {
-            console.debug(`Could not set page name for ${pageName}:`, nameError);
-          }
-          pageNames.push(pageName);
-
-          // Log progress
-          const pagesAfterAdd = mergedEngine.block.findByType("page");
-          console.log(`Pages after adding page ${i + 1}: ${pagesAfterAdd?.length || 0}`);
-        } catch (loadError) {
-          console.error(`Error loading page from ${fileName}:`, loadError);
+          
+          await tempEngine.dispose();
+          console.log(`Merged pages from ${fileName}`);
+        } catch (error) {
+          console.error(`Error merging ${fileName}:`, error);
           pageNames.push(fileName.replace(".psd", "") || `Page ${i + 1}`);
         }
       }
-
-      // Wait a moment for the scene to fully process all loaded pages
-      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Get page IDs from the scene API (this is the correct way)
       const finalPages = mergedEngine.scene.getPages();
@@ -383,7 +441,13 @@ export class PSDProcessor {
       });
       console.log("Final page structure with positions:", finalPageDetails);
 
+      console.log("Saving merged scene archive with embedded assets...");
       const mergedArchive = await mergedEngine.scene.saveToArchive();
+      console.log(`Merged archive size: ${mergedArchive.size} bytes`);
+
+      if (mergedArchive.size < 1000) {
+        console.warn("Archive size is suspiciously small - assets may not be embedded");
+      }
 
       return {
         sceneArchive: mergedArchive,
