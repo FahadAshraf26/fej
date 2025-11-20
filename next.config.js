@@ -2,16 +2,6 @@
 const nextConfig = {
   reactStrictMode: false,
   swcMinify: false,
-  // Increase body size limit for large PSD files
-  experimental: {
-    serverComponentsExternalPackages: ["@imgly/psd-importer"],
-  },
-  // Configure API routes to handle larger payloads
-  api: {
-    bodyParser: {
-      sizeLimit: "900mb", // 900MB limit for very large PSD files
-    },
-  },
   i18n: {
     locales: ["en"],
     defaultLocale: "en",
@@ -29,7 +19,7 @@ const nextConfig = {
     domains: [
       "oobtxuazqbzntvhmvjtj.supabase.co",
       process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, ""),
-    ],
+    ].filter(Boolean),
   },
   env: {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
