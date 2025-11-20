@@ -4,6 +4,18 @@
 This is a Next.js 12 application for restaurant menu design and management with PSD import functionality, Stripe payments, and Supabase authentication.
 
 ## Recent Changes (November 20, 2025)
+### Multiple PSD Import with Reordering (Latest)
+- **New Feature**: Implemented multiple PSD import where each PSD becomes a separate page in the menu
+- **Drag-and-Drop Reordering**: Added ReorderablePSDList component using react-beautiful-dnd for intuitive page ordering
+- **Two-Step Workflow**: 
+  1. Upload/select multiple PSD files and arrange them in desired order
+  2. Click "Create Menu" to process files and create multi-page menu
+- **Order Preservation**: Files are processed and pages created in the exact order specified by user
+- **Components Updated**: 
+  - `components/PSDImport/ReorderablePSDList.tsx` - New drag-and-drop reorderable file list
+  - `components/PSDImport/PSDImportZone.tsx` - Rewritten to support two-step workflow with reordering
+  - `components/PSDImport/PSDProcessor.tsx` - Already maintains input order through merge process
+
 ### Vercel to Replit Migration Completed
 - **Port Configuration**: Updated dev and start scripts to bind to 0.0.0.0:5000 for Replit compatibility
 - **Security Fixes**: Moved sensitive environment variables (Stripe, Twilio, Supabase secrets) from public `env` block to server-only `serverRuntimeConfig`
@@ -23,11 +35,12 @@ This is a Next.js 12 application for restaurant menu design and management with 
 - **PSD Processing**: @imgly/psd-importer
 
 ### Core Features
-1. **PSD Import**: Process and import Adobe Photoshop files into editable templates
-2. **Template Management**: Create, edit, and manage restaurant menu templates
-3. **Authentication**: Supabase-based user authentication
-4. **Subscription Management**: Stripe integration for billing
-5. **Image Optimization**: Tinify API for image compression
+1. **Multiple PSD Import with Reordering**: Upload multiple PSD files, drag-and-drop to reorder, and create multi-page menus where each PSD becomes a separate page in the order you specify
+2. **PSD Processing**: Process and import Adobe Photoshop files into editable templates using @imgly/psd-importer
+3. **Template Management**: Create, edit, and manage restaurant menu templates
+4. **Authentication**: Supabase-based user authentication
+5. **Subscription Management**: Stripe integration for billing
+6. **Image Optimization**: Tinify API for image compression
 
 ## Configuration
 
@@ -73,4 +86,5 @@ The application is configured for Replit Autoscale deployment:
 
 ## Known Issues
 - Next.js lockfile patching warnings (non-critical, uses WASM build)
+- TypeScript warnings with react-beautiful-dnd types (cosmetic only, does not affect functionality)
 - Application requires environment variables to be configured before full functionality
