@@ -9,11 +9,12 @@ import {
   Progress,
   Group,
   Badge,
-  ScrollArea,
+  Button,
 } from "@mantine/core";
 import { IconUpload, IconFile, IconAlertCircle, IconCheck, IconX } from "@tabler/icons";
 import useUploadStore from "../../stores/upload/upload.store";
 import { getLargeFileSuggestions } from "../../helpers/PSDFileSuggestions";
+import { ReorderablePSDList, PSDFileItem } from "./ReorderablePSDList";
 
 interface PSDImportZoneProps {
   onPSDImport: (scene: any) => void;
@@ -36,13 +37,13 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [importStatus, setImportStatus] = useState<"idle" | "processing" | "success" | "error">(
+  const [importStatus, setImportStatus] = useState<"idle" | "uploading" | "processing" | "success" | "error">(
     "idle"
   );
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadId, setUploadId] = useState<string | null>(null);
-  const [files, setFiles] = useState<FileProcessingStatus[]>([]);
+  const [files, setFiles] = useState<PSDFileItem[]>([]);
   const [mergeProgress, setMergeProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -107,7 +108,7 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
   const processPSDFile = useCallback(
     async (
       file: File,
-      fileIndex: number
+      fileId: string
     ): Promise<{ success: boolean; sceneArchive?: Blob; error?: string }> => {
       if (!file) {
         return { success: false, error: "No file provided" };
@@ -117,43 +118,37 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         throw new Error("PSD processing is only available in the browser.");
       }
 
-      setFiles((prev) => {
-        const updated = [...prev];
-        updated[fileIndex] = { ...updated[fileIndex], status: "processing", progress: 0 };
-        return updated;
-      });
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: "processing" as const, progress: 0 } : f
+        )
+      );
 
       let progressInterval: NodeJS.Timeout | null = null;
 
       try {
         progressInterval = setInterval(() => {
-          setFiles((prev) => {
-            const updated = [...prev];
-            if (updated[fileIndex] && updated[fileIndex].progress < 90) {
-              updated[fileIndex] = {
-                ...updated[fileIndex],
-                progress: Math.min(updated[fileIndex].progress + 2, 90),
-              };
-            }
-            return updated;
-          });
+          setFiles((prev) =>
+            prev.map((f) => {
+              if (f.id === fileId && f.progress < 90) {
+                return { ...f, progress: Math.min(f.progress + 2, 90) };
+              }
+              return f;
+            })
+          );
         }, 300);
 
-        setFiles((prev) => {
-          const updated = [...prev];
-          updated[fileIndex] = { ...updated[fileIndex], progress: 5 };
-          return updated;
-        });
+        setFiles((prev) =>
+          prev.map((f) => (f.id === fileId ? { ...f, progress: 5 } : f))
+        );
 
         const PSDProcessorModule = await import("./PSDProcessor");
         const PSDProcessor = PSDProcessorModule.default;
         const psdProcessor = PSDProcessor.getInstance();
 
-        setFiles((prev) => {
-          const updated = [...prev];
-          updated[fileIndex] = { ...updated[fileIndex], progress: 10 };
-          return updated;
-        });
+        setFiles((prev) =>
+          prev.map((f) => (f.id === fileId ? { ...f, progress: 10 } : f))
+        );
 
         const processedResult = await psdProcessor.processPSDFile(file, true);
 
@@ -166,16 +161,18 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
           throw new Error("Failed to process PSD file");
         }
 
-        setFiles((prev) => {
-          const updated = [...prev];
-          updated[fileIndex] = {
-            ...updated[fileIndex],
-            status: "completed",
-            progress: 100,
-            sceneArchive: processedResult.sceneArchive,
-          };
-          return updated;
-        });
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "completed" as const,
+                  progress: 100,
+                  sceneArchive: processedResult.sceneArchive,
+                }
+              : f
+          )
+        );
 
         return { success: true, sceneArchive: processedResult.sceneArchive };
       } catch (error) {
@@ -205,16 +202,18 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
           }
         }
 
-        setFiles((prev) => {
-          const updated = [...prev];
-          updated[fileIndex] = {
-            ...updated[fileIndex],
-            status: "error",
-            progress: 0,
-            error: message,
-          };
-          return updated;
-        });
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "error" as const,
+                  progress: 0,
+                  error: message,
+                }
+              : f
+          )
+        );
 
         return { success: false, error: message };
       }
@@ -222,8 +221,8 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
     []
   );
 
-  const processMultiplePSDFiles = useCallback(
-    async (fileList: File[]) => {
+  const processAndMergeFiles = useCallback(
+    async (fileList: PSDFileItem[]) => {
       if (!fileList || fileList.length === 0) return;
 
       if (typeof window === "undefined") {
@@ -234,20 +233,13 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
       setImportStatus("processing");
       setUploadProgress(0);
 
-      const initialFiles: FileProcessingStatus[] = fileList.map((file) => ({
-        file,
-        status: "pending",
-        progress: 0,
-      }));
-      setFiles(initialFiles);
-
       try {
         toast(`Processing ${fileList.length} PSD file${fileList.length > 1 ? "s" : ""}...`, {
           type: "info",
         });
 
         const processResults = await Promise.all(
-          fileList.map((file, index) => processPSDFile(file, index))
+          fileList.map((fileItem) => processPSDFile(fileItem.file, fileItem.id))
         );
 
         const sceneArchives: Array<{ archive: Blob; fileName: string }> = [];
@@ -257,10 +249,10 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
           if (result.success && result.sceneArchive) {
             sceneArchives.push({
               archive: result.sceneArchive,
-              fileName: fileList[index].name,
+              fileName: fileList[index].file.name,
             });
           } else {
-            errorFiles.push(fileList[index].name);
+            errorFiles.push(fileList[index].file.name);
           }
         });
 
@@ -294,21 +286,21 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         setMergeProgress(100);
 
         const archiveFileName = `merged-${Date.now()}.scene`;
-        const totalFileSize = fileList.reduce((sum, file) => sum + file.size, 0);
+        const totalFileSize = fileList.reduce((sum, f) => sum + f.file.size, 0);
 
         const sceneData = {
           version: "1.0.0",
           meta: {
             name:
               fileList.length === 1
-                ? fileList[0].name.replace(".psd", "")
+                ? fileList[0].file.name.replace(".psd", "")
                 : `${fileList.length} PSD Files`,
             created: new Date().toISOString(),
             isPSDImport: true,
             fileSize: totalFileSize,
             processedArchiveBlob: mergeResult.sceneArchive,
             processedArchiveFileName: archiveFileName,
-            originalFileName: fileList.map((f) => f.name).join(", "),
+            originalFileName: fileList.map((f) => f.file.name).join(", "),
             isProcessedArchive: true,
             needsFirstSave: true,
             processingMessages: mergeResult.messages || [],
@@ -349,8 +341,20 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         setIsProcessing(false);
       }
     },
-    [files, processPSDFile, onPSDImport, onError]
+    [processPSDFile, onPSDImport, onError]
   );
+
+  const handleFilesAdded = (selectedFiles: File[]) => {
+    const newFiles: PSDFileItem[] = selectedFiles.map((file) => ({
+      id: `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name}`,
+      file,
+      status: "pending" as const,
+      progress: 0,
+    }));
+
+    setFiles((prev) => [...prev, ...newFiles]);
+    setImportStatus("uploading");
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
@@ -370,7 +374,7 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
       return;
     }
 
-    processMultiplePSDFiles(selectedFiles);
+    handleFilesAdded(selectedFiles);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -406,13 +410,36 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
       return;
     }
 
-    processMultiplePSDFiles(droppedFiles);
+    handleFilesAdded(droppedFiles);
   };
 
   const handleClick = () => {
     if (!disabled && !isProcessing) {
       fileInputRef.current?.click();
     }
+  };
+
+  const handleReorder = (reorderedFiles: PSDFileItem[]) => {
+    setFiles(reorderedFiles);
+  };
+
+  const handleRemove = (id: string) => {
+    if (isProcessing) return;
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    if (files.length === 1) {
+      setImportStatus("idle");
+    }
+  };
+
+  const handleCreateMenu = () => {
+    processAndMergeFiles(files);
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setImportStatus("idle");
+    setMergeProgress(0);
+    setUploadProgress(0);
   };
 
   const getStatusIcon = () => {
@@ -438,16 +465,13 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         return "PSD files imported successfully!";
       case "error":
         return "Import failed. Please try again.";
+      case "uploading":
+        return `${files.length} file${files.length > 1 ? "s" : ""} selected. Arrange the order and create menu.`;
       default:
         return isDragActive
           ? "Drop your PSD file(s) here"
           : "Drag & drop PSD file(s) or click to browse";
     }
-  };
-
-  const removeFile = (index: number) => {
-    if (isProcessing) return;
-    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (!isMounted) {
@@ -456,106 +480,110 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
 
   return (
     <Box>
-      <Box
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={handleClick}
-        sx={(theme) => ({
-          border: `2px dashed ${
-            isDragActive
-              ? theme.colors.orange[6]
-              : importStatus === "error"
-              ? theme.colors.red[6]
-              : importStatus === "success"
-              ? theme.colors.green[6]
-              : theme.colors.gray[4]
-          }`,
-          borderRadius: theme.radius.md,
-          padding: theme.spacing.xl,
-          textAlign: "center",
-          cursor: disabled || isProcessing ? "not-allowed" : "pointer",
-          backgroundColor: isDragActive
-            ? theme.colors.orange[0]
-            : importStatus === "success"
-            ? theme.colors.green[0]
-            : theme.colors.gray[0],
-          transition: "all 0.2s ease",
-          "&:hover": {
-            backgroundColor: disabled || isProcessing ? undefined : theme.colors.orange[0],
-            borderColor: disabled || isProcessing ? undefined : theme.colors.orange[6],
-          },
-        })}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".psd,image/vnd.adobe.photoshop"
-          multiple
-          onChange={handleFileSelect}
-          style={{ display: "none" }}
-        />
+      {(importStatus === "idle" || importStatus === "uploading") && (
+        <Box
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={importStatus === "idle" ? handleClick : undefined}
+          sx={(theme) => ({
+            border: `2px dashed ${
+              isDragActive
+                ? theme.colors.orange[6]
+                : theme.colors.gray[4]
+            }`,
+            borderRadius: theme.radius.md,
+            padding: theme.spacing.xl,
+            textAlign: "center",
+            cursor: disabled || isProcessing || importStatus === "uploading" ? "default" : "pointer",
+            backgroundColor: isDragActive
+              ? theme.colors.orange[0]
+              : theme.colors.gray[0],
+            transition: "all 0.2s ease",
+            "&:hover": {
+              backgroundColor: disabled || isProcessing || importStatus === "uploading" ? undefined : theme.colors.orange[0],
+              borderColor: disabled || isProcessing || importStatus === "uploading" ? undefined : theme.colors.orange[6],
+            },
+          })}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".psd,image/vnd.adobe.photoshop"
+            multiple
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
 
-        <Stack align="center" spacing="md">
-          <ThemeIcon
-            size={48}
-            radius="xl"
-            color={
-              importStatus === "success" ? "green" : importStatus === "error" ? "red" : "orange"
-            }
-            variant="light"
-          >
-            {getStatusIcon()}
-          </ThemeIcon>
+          <Stack align="center" spacing="md">
+            <ThemeIcon size={48} radius="xl" color="orange" variant="light">
+              {getStatusIcon()}
+            </ThemeIcon>
 
-          <Text size="lg" weight={600} color="dimmed">
-            {getStatusText()}
-          </Text>
-
-          {importStatus === "idle" && (
-            <Text size="sm" color="dimmed">
-              Supported format: .psd files (multiple files supported)
+            <Text size="lg" weight={600} color="dimmed">
+              {getStatusText()}
             </Text>
-          )}
 
-          {importStatus === "processing" && (
-            <Stack spacing="xs" style={{ width: "100%" }}>
-              {files.length > 0 && mergeProgress === 0 ? (
-                <>
-                  <Text size="sm" color="dimmed">
-                    Processing {files.length} file{files.length > 1 ? "s" : ""}...
-                  </Text>
-                  {files.map((fileStatus, index) => (
-                    <Box key={index} style={{ width: "100%" }}>
-                      <Group position="apart" mb={4}>
-                        <Text
-                          size="xs"
-                          color="dimmed"
-                          style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}
-                        >
-                          {fileStatus.file.name}
-                        </Text>
-                        <Badge
-                          size="xs"
-                          color={
-                            fileStatus.status === "completed"
-                              ? "green"
-                              : fileStatus.status === "error"
-                              ? "red"
-                              : "orange"
-                          }
-                        >
-                          {fileStatus.status === "completed"
-                            ? "Done"
-                            : fileStatus.status === "error"
-                            ? "Error"
-                            : `${fileStatus.progress}%`}
-                        </Badge>
-                      </Group>
-                      <Progress
-                        value={fileStatus.progress}
+            {importStatus === "idle" && (
+              <Text size="sm" color="dimmed">
+                Supported format: .psd files (multiple files supported)
+              </Text>
+            )}
+          </Stack>
+        </Box>
+      )}
+
+      {importStatus === "uploading" && files.length > 0 && (
+        <Box mt="md">
+          <Alert color="blue" icon={<IconFile size={16} />} mb="md">
+            <Text size="sm">
+              <strong>Arrange your pages:</strong> Drag and drop to reorder. Each PSD will become a page in your menu in this order.
+            </Text>
+          </Alert>
+
+          <ReorderablePSDList
+            files={files}
+            onReorder={handleReorder}
+            onRemove={handleRemove}
+            disabled={isProcessing}
+          />
+
+          <Group position="apart" mt="md">
+            <Button variant="subtle" color="gray" onClick={handleReset} disabled={isProcessing}>
+              Clear All
+            </Button>
+            <Button
+              color="orange"
+              onClick={handleCreateMenu}
+              disabled={isProcessing || files.length === 0}
+              leftIcon={<IconCheck size={16} />}
+            >
+              Create Menu ({files.length} page{files.length > 1 ? "s" : ""})
+            </Button>
+          </Group>
+        </Box>
+      )}
+
+      {importStatus === "processing" && (
+        <Box mt="md">
+          <Stack spacing="xs">
+            {files.length > 0 && mergeProgress === 0 ? (
+              <>
+                <Text size="sm" color="dimmed" align="center">
+                  Processing {files.length} file{files.length > 1 ? "s" : ""}...
+                </Text>
+                {files.map((fileStatus) => (
+                  <Box key={fileStatus.id}>
+                    <Group position="apart" mb={4}>
+                      <Text
                         size="xs"
-                        radius="xl"
+                        color="dimmed"
+                        sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}
+                      >
+                        {fileStatus.file.name}
+                      </Text>
+                      <Badge
+                        size="xs"
                         color={
                           fileStatus.status === "completed"
                             ? "green"
@@ -563,81 +591,58 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
                             ? "red"
                             : "orange"
                         }
-                        style={{ width: "100%" }}
-                      />
-                    </Box>
-                  ))}
-                </>
-              ) : mergeProgress > 0 ? (
-                <>
-                  <Text size="sm" color="dimmed">
-                    Merging PSD files into a single menu... {mergeProgress}%
-                  </Text>
-                  <Progress
-                    value={mergeProgress}
-                    size="sm"
-                    radius="xl"
-                    color="orange"
-                    style={{ width: "100%" }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Text size="sm" color="dimmed">
-                    Processing... {uploadProgress}%
-                  </Text>
-                  <Progress
-                    value={uploadProgress}
-                    size="sm"
-                    radius="xl"
-                    color="orange"
-                    style={{ width: "100%" }}
-                  />
-                </>
-              )}
-            </Stack>
-          )}
-        </Stack>
-      </Box>
+                      >
+                        {fileStatus.status === "completed"
+                          ? "Done"
+                          : fileStatus.status === "error"
+                          ? "Error"
+                          : `${fileStatus.progress}%`}
+                      </Badge>
+                    </Group>
+                    <Progress
+                      value={fileStatus.progress}
+                      size="xs"
+                      radius="xl"
+                      color={
+                        fileStatus.status === "completed"
+                          ? "green"
+                          : fileStatus.status === "error"
+                          ? "red"
+                          : "orange"
+                      }
+                    />
+                  </Box>
+                ))}
+              </>
+            ) : mergeProgress > 0 ? (
+              <>
+                <Text size="sm" color="dimmed" align="center">
+                  Merging PSD files into a single menu... {mergeProgress}%
+                </Text>
+                <Progress value={mergeProgress} size="sm" radius="xl" color="orange" />
+              </>
+            ) : (
+              <>
+                <Text size="sm" color="dimmed" align="center">
+                  Processing... {uploadProgress}%
+                </Text>
+                <Progress value={uploadProgress} size="sm" radius="xl" color="orange" />
+              </>
+            )}
+          </Stack>
+        </Box>
+      )}
 
       {importStatus === "error" && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} mt="md">
           <Text size="sm">
-            There was an error processing your PSD file. Please make sure it&apos;s a valid PSD file
+            There was an error processing your PSD files. Please make sure they are valid PSD files
             and try again.
           </Text>
+          <Button variant="subtle" color="red" size="xs" onClick={handleReset} mt="sm">
+            Try Again
+          </Button>
         </Alert>
-      )}
-
-      {files.length > 0 && importStatus !== "processing" && (
-        <Box mt="md">
-          <Text size="sm" weight={600} mb="xs">
-            Selected Files ({files.length}):
-          </Text>
-          <ScrollArea style={{ maxHeight: 150 }}>
-            <Stack spacing="xs">
-              {files.map((fileStatus, index) => (
-                <Group
-                  key={index}
-                  position="apart"
-                  p="xs"
-                  style={{ border: "1px solid #e0e0e0", borderRadius: 4 }}
-                >
-                  <Text size="xs" style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {fileStatus.file.name}
-                  </Text>
-                  {!isProcessing && (
-                    <IconX
-                      size={16}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => removeFile(index)}
-                    />
-                  )}
-                </Group>
-              ))}
-            </Stack>
-          </ScrollArea>
-        </Box>
       )}
 
       {importStatus === "success" && (
