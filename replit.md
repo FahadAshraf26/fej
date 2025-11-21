@@ -29,6 +29,10 @@ This is a Next.js 12 application for restaurant menu design and management with 
   - Uses CESDK's `block.saveToString([pageId])` to serialize pages with all children
   - Uses `block.loadFromString(pageString)` to deserialize into master engine
   - Pages cloned with `block.duplicate()` before serialization for deep copying
+  - **Asset Transfer**: Buffer URIs (images) copied between engines using Buffer API:
+    - `editor.getBufferLength()` + `editor.getBufferData()` to read from temp engine
+    - `editor.createBuffer()` + `editor.setBufferData()` to write to master engine
+    - Image fill URIs updated after import to reference new buffers
   - Metadata tracks source PSD per page for UI display
 - **Files Modified**:
   - `components/PSDImport/PSDProcessor.tsx` - Two-step parse + clone using block APIs

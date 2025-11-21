@@ -258,12 +258,67 @@ export class PSDProcessor {
             // Duplicate the page (creates a deep copy with all children)
             const clonedPageId = tempLoadEngine.block.duplicate(pageId);
 
+            // CRITICAL: Transfer buffer assets before serialization
+            // Get all blocks in the cloned page to find images
+            const allBlocksInPage = tempLoadEngine.block.findAll();
+            const bufferMapping = new Map<string, string>();
+
+            for (const blockId of allBlocksInPage) {
+              // Check if this block has a fill (image blocks have fills)
+              if (tempLoadEngine.block.hasFill(blockId)) {
+                const fillId = tempLoadEngine.block.getFill(blockId);
+                
+                // Get the image URI from the fill
+                const imageUri = tempLoadEngine.block.getString(fillId, 'fill/image/imageFileURI');
+                
+                // If it's a buffer:// URI, we need to copy the buffer data
+                if (imageUri && imageUri.startsWith('buffer://')) {
+                  // Check if we already copied this buffer
+                  if (!bufferMapping.has(imageUri)) {
+                    try {
+                      // Get the buffer length and data from temp engine
+                      const bufferLength = tempLoadEngine.editor.getBufferLength(imageUri);
+                      const bufferData = tempLoadEngine.editor.getBufferData(imageUri, 0, bufferLength);
+                      
+                      // Create a new buffer in the master engine
+                      const newBufferUri = masterEngine.editor.createBuffer();
+                      
+                      // Copy the data to the new buffer
+                      masterEngine.editor.setBufferData(newBufferUri, 0, bufferData);
+                      
+                      // Store the mapping
+                      bufferMapping.set(imageUri, newBufferUri);
+                      console.log(`Copied buffer asset: ${imageUri} -> ${newBufferUri} (${bufferLength} bytes)`);
+                    } catch (bufferError) {
+                      console.warn(`Failed to copy buffer ${imageUri}:`, bufferError);
+                    }
+                  }
+                }
+              }
+            }
+
             // Serialize the cloned page as a string (correct CESDK API)
             const pageString = await tempLoadEngine.block.saveToString([clonedPageId]);
 
             // Import the page into the master engine (correct CESDK API)
             const importedBlockIds = await masterEngine.block.loadFromString(pageString);
             const importedPageId = importedBlockIds[0]; // First block is the page
+
+            // Now update all buffer:// URIs in the imported page to use the new buffers
+            const importedBlocks = masterEngine.block.findAll();
+            for (const blockId of importedBlocks) {
+              if (masterEngine.block.hasFill(blockId)) {
+                const fillId = masterEngine.block.getFill(blockId);
+                const imageUri = masterEngine.block.getString(fillId, 'fill/image/imageFileURI');
+                
+                // Replace old buffer URI with new one from our mapping
+                if (imageUri && bufferMapping.has(imageUri)) {
+                  const newBufferUri = bufferMapping.get(imageUri);
+                  masterEngine.block.setString(fillId, 'fill/image/imageFileURI', newBufferUri);
+                  console.log(`Updated image URI: ${imageUri} -> ${newBufferUri}`);
+                }
+              }
+            }
 
             // Append the imported page to the master scene
             masterEngine.block.appendChild(masterScene, importedPageId);
