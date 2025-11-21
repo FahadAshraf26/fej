@@ -1,0 +1,61 @@
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican1 (1).psd as archive with embedded assets, size: 2467050 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican2.psd as archive with embedded assets, size: 8011332 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican3.psd as archive with embedded assets, size: 5028985 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican4.psd as archive with embedded assets, size: 15764317 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican5.psd as archive with embedded assets, size: 21080719 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:222 Saved scene from Marias_Mexican6.psd as archive with embedded assets, size: 3198245 bytes
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:257 Created new empty scene with root 0
+PSDProcessor.tsx:275 Added archive for Marias_Mexican1 (1).psd, size: 2467050 bytes
+PSDProcessor.tsx:275 Added archive for Marias_Mexican2.psd, size: 8011332 bytes
+PSDProcessor.tsx:275 Added archive for Marias_Mexican3.psd, size: 5028985 bytes
+PSDProcessor.tsx:275 Added archive for Marias_Mexican4.psd, size: 15764317 bytes
+PSDProcessor.tsx:275 Added archive for Marias_Mexican5.psd, size: 21080719 bytes
+PSDProcessor.tsx:275 Added archive for Marias_Mexican6.psd, size: 3198245 bytes
+PSDProcessor.tsx:318 Loaded Marias_Mexican1 (1).psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 13 blocks from Marias_Mexican1 (1).psd, page dims: 3300x5100
+PSDProcessor.tsx:318 Loaded Marias_Mexican2.psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 74 blocks from Marias_Mexican2.psd, page dims: 3300x5100
+PSDProcessor.tsx:318 Loaded Marias_Mexican3.psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 42 blocks from Marias_Mexican3.psd, page dims: 3300x5100
+PSDProcessor.tsx:318 Loaded Marias_Mexican4.psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 27 blocks from Marias_Mexican4.psd, page dims: 3300x5100
+PSDProcessor.tsx:318 Loaded Marias_Mexican5.psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 19 blocks from Marias_Mexican5.psd, page dims: 3300x5100
+PSDProcessor.tsx:318 Loaded Marias_Mexican6.psd, has 1 pages
+PSDProcessor.tsx:352 Duplicated 22 blocks from Marias_Mexican6.psd, page dims: 3300x5100
+PSDProcessor.tsx:363 Created fresh scene, rebuilding 6 pages from duplicated blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican1 (1)" with 13 blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican2" with 74 blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican3" with 42 blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican4" with 27 blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican5" with 19 blocks
+PSDProcessor.tsx:386 Created page "Marias_Mexican6" with 22 blocks
+PSDProcessor.tsx:395 Final page count from scene API: 6
+PSDProcessor.tsx:420 Page 1048578 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 1048578 at Y: 0
+PSDProcessor.tsx:420 Page 1048580 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 1048580 at Y: 5150
+PSDProcessor.tsx:420 Page 1048586 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 1048586 at Y: 10300
+PSDProcessor.tsx:420 Page 2097167 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 2097167 at Y: 15450
+PSDProcessor.tsx:420 Page 2097164 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 2097164 at Y: 20600
+PSDProcessor.tsx:420 Page 2097169 - Height: 5100, Width: 3300, Children: 0
+PSDProcessor.tsx:430 Positioned page 2097169 at Y: 25750
+PSDProcessor.tsx:457 Final page structure with positions: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+PSDProcessor.tsx:459 Saving merged scene archive with embedded assets...
+PSDProcessor.tsx:461 Merged archive size: 8069 bytes
+hot-dev-client.js:154 [Fast Refresh] rebuilding
+hot-dev-client.js:130 [Fast Refresh] done in 328ms
+useTitleUIElementEffect.ts:272 ShadowRoot not found. Unable to inject elements.
+EditorConfig.tsx:189 [CE.SDK] v1.41.0 Revision 0b6b68e50f7
+EditorConfig.tsx:189 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+InitializeEditor.ts:121 PSD menu auto-saved successfully on first editor open
