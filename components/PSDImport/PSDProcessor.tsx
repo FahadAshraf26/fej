@@ -238,17 +238,17 @@ export class PSDProcessor {
         try {
           console.log(`Adding pages from PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
 
-          // Load archive directly into master engine (not a separate engine!)
+          // Load archive into engine (creates a new scene, replacing current active scene)
           const archiveUrl = URL.createObjectURL(archive);
           await masterEngine.scene.loadFromArchiveURL(archiveUrl);
           URL.revokeObjectURL(archiveUrl);
 
-          // Get all pages from the currently loaded scene
-          const currentSceneId = masterEngine.scene.get();
+          // Get the temp scene that was just loaded
+          const tempSceneId = masterEngine.scene.get();
           const pagesInArchive = masterEngine.block.findByType("page");
           console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
 
-          // Duplicate each page WITHIN THE SAME ENGINE (this preserves buffer assets!)
+          // Duplicate each page WITHIN THE SAME ENGINE (preserves buffer assets!)
           const duplicatedPageIds: number[] = [];
           for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
             const pageId = pagesInArchive[pageIdx];
@@ -268,21 +268,21 @@ export class PSDProcessor {
             console.log(`Duplicated page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
           }
 
-          // Now switch to master scene and append the duplicated pages
-          await masterEngine.scene.loadFromString(
-            await masterEngine.block.saveToString([masterScene])
-          );
+          // Switch back to master scene
+          masterEngine.scene.load(masterScene);
+          console.log(`Switched to master scene ${masterScene}`);
 
-          // Append all duplicated pages to master scene
+          // Append all duplicated pages to master scene (auto-reparents them!)
           for (const dupPageId of duplicatedPageIds) {
             masterEngine.block.appendChild(masterScene, dupPageId);
-            console.log(`Moved duplicated page ${dupPageId} to master scene`);
+            console.log(`Appended duplicated page ${dupPageId} to master scene`);
           }
 
-          // Destroy the temporary scene that held the original PSD
+          // Destroy the temporary scene
           try {
-            if (currentSceneId && currentSceneId !== masterScene) {
-              masterEngine.scene.destroy(currentSceneId);
+            if (tempSceneId !== masterScene) {
+              masterEngine.scene.destroy(tempSceneId);
+              console.log(`Destroyed temp scene ${tempSceneId}`);
             }
           } catch (destroyError) {
             console.warn("Could not destroy temp scene:", destroyError);
