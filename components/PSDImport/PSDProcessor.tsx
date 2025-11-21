@@ -159,44 +159,100 @@ export class PSDProcessor {
         console.warn("Google Fonts loading failed, continuing without them:", fontError);
       }
 
-      // SIMPLIFIED: Only process first PSD for now
-      console.log(`Processing FIRST PSD only (simplified test): ${inputs[0].fileName}`);
+      // Parse first PSD to create master scene
+      console.log(`Parsing PSD 1/${inputs.length}: ${inputs[0].fileName}`);
       const firstInput = inputs[0];
       if (!firstInput.file) {
         throw new Error("First file is missing");
       }
 
-      const fileBuffer = await firstInput.file.arrayBuffer();
-      const parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
-      const result = await parser.parse();
+      let fileBuffer = await firstInput.file.arrayBuffer();
+      let parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
+      let result = await parser.parse();
 
       if (result && result.logger) {
         allMessages.push(...(result.logger.getMessages() || []));
       }
 
       if (!result) {
-        throw new Error(`Failed to parse PSD: ${firstInput.fileName}`);
+        throw new Error(`Failed to parse first PSD: ${firstInput.fileName}`);
       }
 
-      const scene = engine.scene.get();
-      engine.block.setEnum(scene, "scene/layout", "VerticalStack");
-      console.log(`Parsed first PSD with VerticalStack layout`);
+      const masterSceneId = engine.scene.get();
+      engine.block.setEnum(masterSceneId, "scene/layout", "VerticalStack");
+      console.log(`Created master scene ${masterSceneId} with VerticalStack layout`);
 
       // Track pages
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
-      const pages = engine.block.findByType("page");
-      const pageName = firstInput.fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
+      let currentPageIndex = 0;
+      
+      let pages = engine.block.findByType("page");
+      let pageName = firstInput.fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
       
       for (let i = 0; i < pages.length; i++) {
-        pageSourceMap.set(i, {
+        pageSourceMap.set(currentPageIndex++, {
           fileName: firstInput.fileName,
           psdName: pageName,
           pageIndexInPSD: i,
         });
       }
 
-      console.log(`Scene has ${pages.length} page(s) from ${firstInput.fileName}`);
-      console.log(`NOTE: Only processing first PSD - this is a simplified test to verify images work`)
+      console.log(`Master scene has ${pages.length} page(s) from ${firstInput.fileName}`);
+
+      // Process remaining PSDs in the SAME engine
+      for (let i = 1; i < inputs.length; i++) {
+        const { file, fileName } = inputs[i];
+
+        if (!file) {
+          console.warn(`Skipping ${fileName} - no file provided`);
+          continue;
+        }
+
+        try {
+          console.log(`Parsing PSD ${i + 1}/${inputs.length}: ${fileName}`);
+
+          fileBuffer = await file.arrayBuffer();
+          parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
+          result = await parser.parse();
+
+          if (result && result.logger) {
+            allMessages.push(...(result.logger.getMessages() || []));
+          }
+
+          if (!result) {
+            throw new Error(`Failed to parse PSD: ${fileName}`);
+          }
+
+          // Get the new scene that was just created
+          const newSceneId = engine.scene.get();
+          console.log(`PSD created new scene ${newSceneId}`);
+
+          // Get all pages from the new scene
+          const newPages = engine.block.findByType("page");
+          console.log(`Found ${newPages.length} page(s) in new scene`);
+
+          // Move pages from new scene to master scene (appendChild auto-reparents!)
+          for (const pageId of newPages) {
+            engine.block.appendChild(masterSceneId, pageId);
+          }
+
+          pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
+          for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+            pageSourceMap.set(currentPageIndex++, {
+              fileName,
+              psdName: pageName,
+              pageIndexInPSD: pageIdx,
+            });
+          }
+
+          console.log(`Moved ${newPages.length} page(s) from scene ${newSceneId} to master scene ${masterSceneId}`);
+        } catch (error) {
+          console.error(`Error processing ${fileName}:`, error);
+          throw error;
+        }
+      }
+
+      console.log(`All PSDs processed! Master scene now has ${currentPageIndex} total page(s)`)
 
       // Build metadata
       const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
