@@ -295,83 +295,98 @@ export class PSDProcessor {
         };
       }
       
-      // For multiple files, load each archive and rebuild a merged scene
-      // Step 4: Load first archive as the base
-      const firstArchiveUrl = URL.createObjectURL(pageArchives[0].archive);
-      await mergedEngine.scene.loadFromArchiveURL(firstArchiveUrl);
-      URL.revokeObjectURL(firstArchiveUrl);
+      // For multiple files, use block.duplicate() approach to preserve assets
+      // This works by duplicating page content blocks within same engine before scene reload
       
-      const firstPages = mergedEngine.scene.getPages();
-      for (const pageId of firstPages) {
-        const pageName = pageArchives[0].fileName.replace(".psd", "");
-        mergedEngine.block.setName(pageId, pageName);
-        pageNames.push(pageName);
-      }
+      const allPageData: Array<{
+        duplicatedBlocks: number[];
+        width: number;
+        height: number;
+        fileName: string;
+      }> = [];
       
-      console.log(`Loaded first archive (${pageArchives[0].fileName}) with ${firstPages.length} pages`);
-      
-      // Step 5: For each additional archive, load it and transfer pages
-      for (let i = 1; i < pageArchives.length; i++) {
+      for (let i = 0; i < pageArchives.length; i++) {
         const { archive, fileName } = pageArchives[i];
         
         try {
-          // Create a temporary engine to load this archive
-          const tempEngine = await this.createTemporaryEngine();
-          
+          // Load this archive into the merged engine
           const archiveUrl = URL.createObjectURL(archive);
-          await tempEngine.scene.loadFromArchiveURL(archiveUrl);
+          await mergedEngine.scene.loadFromArchiveURL(archiveUrl);
           URL.revokeObjectURL(archiveUrl);
           
-          const tempPages = tempEngine.scene.getPages();
-          console.log(`Loaded ${fileName} into temp engine, has ${tempPages.length} pages`);
+          const loadedPages = mergedEngine.scene.getPages();
+          console.log(`Loaded ${fileName}, has ${loadedPages.length} pages`);
           
-          // For each page, export it and import into merged scene
-          for (const tempPageId of tempPages) {
-            // Export the page as PNG to get rendered content
-            const pageArchiveBlob = await tempEngine.scene.saveToArchive();
-            
-            // Load into a second temp engine to extract just this page
-            const extractEngine = await this.createTemporaryEngine();
-            const extractUrl = URL.createObjectURL(pageArchiveBlob);
-            await extractEngine.scene.loadFromArchiveURL(extractUrl);
-            URL.revokeObjectURL(extractUrl);
-            
-            const extractedPages = extractEngine.scene.getPages();
-            if (extractedPages.length > 0) {
-              const sourcePage = extractedPages[0];
-              
-              // Create new page in merged scene
-              const newPage = mergedEngine.block.create("page");
-              mergedEngine.block.setWidth(newPage, extractEngine.block.getWidth(sourcePage));
-              mergedEngine.block.setHeight(newPage, extractEngine.block.getHeight(sourcePage));
-              
-              // Copy all children
-              const children = extractEngine.block.getChildren(sourcePage);
-              for (const childId of children) {
-                const childArchive = await extractEngine.block.saveToString([childId]);
-                const loadedChildren = await mergedEngine.block.loadFromString(childArchive);
-                if (loadedChildren && loadedChildren.length > 0) {
-                  mergedEngine.block.appendChild(newPage, loadedChildren[0]);
-                }
-              }
-              
-              // Add page to merged scene
-              const sceneRoot = mergedEngine.scene.get();
-              mergedEngine.block.appendChild(sceneRoot, newPage);
-              
-              const pageName = fileName.replace(".psd", "");
-              mergedEngine.block.setName(newPage, pageName);
-              pageNames.push(pageName);
-            }
-            
-            await extractEngine.dispose();
+          if (!loadedPages || loadedPages.length === 0) {
+            console.warn(`No pages in ${fileName}`);
+            continue;
           }
           
-          await tempEngine.dispose();
-          console.log(`Merged pages from ${fileName}`);
+          // For each page, duplicate all content blocks
+          for (const pageId of loadedPages) {
+            const pageWidth = mergedEngine.block.getWidth(pageId);
+            const pageHeight = mergedEngine.block.getHeight(pageId);
+            const children = mergedEngine.block.getChildren(pageId);
+            
+            const duplicatedBlocks: number[] = [];
+            
+            // Duplicate each child block (this preserves all assets)
+            for (const childId of children) {
+              try {
+                const dupId = mergedEngine.block.duplicate(childId);
+                duplicatedBlocks.push(dupId);
+                // Detach from page - attach to scene root temporarily
+                mergedEngine.block.setParent(dupId, 0);
+              } catch (dupError) {
+                console.warn(`Could not duplicate block ${childId}:`, dupError);
+              }
+            }
+            
+            allPageData.push({
+              duplicatedBlocks,
+              width: pageWidth,
+              height: pageHeight,
+              fileName,
+            });
+            
+            console.log(`Duplicated ${duplicatedBlocks.length} blocks from ${fileName}, page dims: ${pageWidth}x${pageHeight}`);
+          }
         } catch (error) {
-          console.error(`Error merging ${fileName}:`, error);
-          pageNames.push(fileName.replace(".psd", "") || `Page ${i + 1}`);
+          console.error(`Error loading ${fileName}:`, error);
+        }
+      }
+      
+      // Now create a fresh scene and rebuild pages from duplicated blocks
+      await mergedEngine.scene.create();
+      const newSceneRoot = mergedEngine.scene.get();
+      
+      console.log(`Created fresh scene, rebuilding ${allPageData.length} pages from duplicated blocks`);
+      
+      for (const pageData of allPageData) {
+        try {
+          const newPage = mergedEngine.block.create("page");
+          mergedEngine.block.setWidth(newPage, pageData.width);
+          mergedEngine.block.setHeight(newPage, pageData.height);
+          
+          // Re-parent all duplicated blocks to this page
+          for (const blockId of pageData.duplicatedBlocks) {
+            try {
+              mergedEngine.block.setParent(blockId, newPage);
+            } catch (parentError) {
+              console.warn(`Could not set parent for block ${blockId}:`, parentError);
+            }
+          }
+          
+          mergedEngine.block.appendChild(newSceneRoot, newPage);
+          
+          const pageName = pageData.fileName.replace(".psd", "");
+          mergedEngine.block.setName(newPage, pageName);
+          pageNames.push(pageName);
+          
+          console.log(`Created page "${pageName}" with ${pageData.duplicatedBlocks.length} blocks`);
+        } catch (pageError) {
+          console.error(`Error creating page for ${pageData.fileName}:`, pageError);
+          pageNames.push(pageData.fileName.replace(".psd", ""));
         }
       }
 

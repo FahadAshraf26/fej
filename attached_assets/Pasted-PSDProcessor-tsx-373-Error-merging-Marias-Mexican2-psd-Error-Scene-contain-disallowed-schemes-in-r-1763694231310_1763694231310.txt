@@ -1,0 +1,48 @@
+PSDProcessor.tsx:373 Error merging Marias_Mexican2.psd: Error: Scene contain disallowed schemes in resource URLs: "bundle"
+
+    at methodCaller<(UBQResult<string>) =…/index.js:28:177690)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x463e4b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x14cf951
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x148e78b
+    at eval (PSDProcessor.tsx:351:64)
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:326 Loaded Marias_Mexican3.psd into temp engine, has 1 pages
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:373 Error merging Marias_Mexican3.psd: Error: Scene contain disallowed schemes in resource URLs: "bundle"
+
+    at methodCaller<(UBQResult<string>) =…/index.js:28:177690)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x463e4b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x14cf951
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x148e78b
+    at eval (PSDProcessor.tsx:351:64)
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:326 Loaded Marias_Mexican4.psd into temp engine, has 1 pages
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:373 Error merging Marias_Mexican4.psd: Error: Scene contain disallowed schemes in resource URLs: "bundle"
+
+    at methodCaller<(UBQResult<string>) =…/index.js:28:177690)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x463e4b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x14cf951
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x148e78b
+    at eval (PSDProcessor.tsx:351:64)
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:326 Loaded Marias_Mexican5.psd into temp engine, has 1 pages
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:373 Error merging Marias_Mexican5.psd: Error: Scene contain disallowed schemes in resource URLs: "bundle"
+
+    at methodCaller<(UBQResult<string>) =…/index.js:28:177690)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x463e4b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x14cf951
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x148e78b
+    at eval (PSDProcessor.tsx:351:64)
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:326 Loaded Marias_Mexican6.psd into temp engine, has 1 pages
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:371 Merged pages from Marias_Mexican6.psd
+PSDProcessor.tsx:380 Final page count from scene API: 1
+PSDProcessor.tsx:405 Page 3 - Height: 5100, Width: 3300, Children: 13
+PSDProcessor.tsx:420 Error positioning page 3: Error: Block's position is controlled by the parent block and can't be modified.
+
+    at eval (PSDProcessor.tsx:412:30)
+PSDProcessor.tsx:442 Final page structure with positions: 
+[{…}]
