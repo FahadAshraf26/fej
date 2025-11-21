@@ -215,7 +215,7 @@ export class PSDProcessor {
         throw new Error("No PSD files were parsed successfully");
       }
 
-      // Step 2: Create a master scene and manually add pages from each PSD
+      // Step 2: Create a master scene and load all archives into SAME engine
       masterEngine = await this.createTemporaryEngine();
 
       if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
@@ -231,42 +231,31 @@ export class PSDProcessor {
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
       let totalPagesAdded = 0;
 
-      // Load each PSD archive and clone its pages into the master scene
+      // Load each PSD archive into master engine and duplicate pages (preserves buffers!)
       for (let i = 0; i < parsedArchives.length; i++) {
         const { archive, fileName, pageName } = parsedArchives[i];
-        let tempLoadEngine: any = null;
 
         try {
           console.log(`Adding pages from PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
 
-          // Create a temporary engine to load this archive
-          tempLoadEngine = await this.createTemporaryEngine();
-
-          // Load the archive into the temporary engine
+          // Load archive directly into master engine (not a separate engine!)
           const archiveUrl = URL.createObjectURL(archive);
-          await tempLoadEngine.scene.loadFromArchiveURL(archiveUrl);
+          await masterEngine.scene.loadFromArchiveURL(archiveUrl);
           URL.revokeObjectURL(archiveUrl);
 
-          // Get all pages from this loaded archive
-          const pagesInArchive = tempLoadEngine.block.findByType("page");
+          // Get all pages from the currently loaded scene
+          const currentSceneId = masterEngine.scene.get();
+          const pagesInArchive = masterEngine.block.findByType("page");
           console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
 
-          // Clone each page and append to the master scene
+          // Duplicate each page WITHIN THE SAME ENGINE (this preserves buffer assets!)
+          const duplicatedPageIds: number[] = [];
           for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
             const pageId = pagesInArchive[pageIdx];
             
-            // Duplicate the page (creates a deep copy with all children)
-            const clonedPageId = tempLoadEngine.block.duplicate(pageId);
-
-            // Serialize the cloned page as a string (correct CESDK API)
-            const pageString = await tempLoadEngine.block.saveToString([clonedPageId]);
-
-            // Import the page into the master engine (correct CESDK API)
-            const importedBlockIds = await masterEngine.block.loadFromString(pageString);
-            const importedPageId = importedBlockIds[0]; // First block is the page
-
-            // Append the imported page to the master scene
-            masterEngine.block.appendChild(masterScene, importedPageId);
+            // Duplicate within same engine - buffers are preserved!
+            const clonedPageId = masterEngine.block.duplicate(pageId);
+            duplicatedPageIds.push(clonedPageId);
 
             // Track which PSD this page came from
             pageSourceMap.set(totalPagesAdded, {
@@ -276,19 +265,31 @@ export class PSDProcessor {
             });
 
             totalPagesAdded++;
-            console.log(`Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
+            console.log(`Duplicated page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
+          }
+
+          // Now switch to master scene and append the duplicated pages
+          await masterEngine.scene.loadFromString(
+            await masterEngine.block.saveToString([masterScene])
+          );
+
+          // Append all duplicated pages to master scene
+          for (const dupPageId of duplicatedPageIds) {
+            masterEngine.block.appendChild(masterScene, dupPageId);
+            console.log(`Moved duplicated page ${dupPageId} to master scene`);
+          }
+
+          // Destroy the temporary scene that held the original PSD
+          try {
+            if (currentSceneId && currentSceneId !== masterScene) {
+              masterEngine.scene.destroy(currentSceneId);
+            }
+          } catch (destroyError) {
+            console.warn("Could not destroy temp scene:", destroyError);
           }
         } catch (error) {
           console.error(`Error adding pages from ${fileName}:`, error);
           throw error;
-        } finally {
-          if (tempLoadEngine) {
-            try {
-              await tempLoadEngine.dispose();
-            } catch (cleanupError) {
-              console.warn("Error disposing temp load engine:", cleanupError);
-            }
-          }
         }
       }
 
