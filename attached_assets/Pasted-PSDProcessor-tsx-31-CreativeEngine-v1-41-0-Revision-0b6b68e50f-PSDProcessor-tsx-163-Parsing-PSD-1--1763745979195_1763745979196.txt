@@ -1,0 +1,241 @@
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:163 Parsing PSD 1/6: Marias_Mexican1 (1).psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican1" as archive
+PSDProcessor.tsx:163 Parsing PSD 2/6: Marias_Mexican2.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican2" as archive
+PSDProcessor.tsx:163 Parsing PSD 3/6: Marias_Mexican3.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican3" as archive
+PSDProcessor.tsx:163 Parsing PSD 4/6: Marias_Mexican4.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican4" as archive
+PSDProcessor.tsx:163 Parsing PSD 5/6: Marias_Mexican5.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican5" as archive
+PSDProcessor.tsx:163 Parsing PSD 6/6: Marias_Mexican6.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican6" as archive
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:228 Created master multi-page scene with VerticalStack layout
+PSDProcessor.tsx:239 Loading PSD 1/6: Marias_Mexican1
+PSDProcessor.tsx:252 Found 1 page(s) in Marias_Mexican1 (1).psd
+PSDProcessor.tsx:281 Error adding pages from Marias_Mexican1 (1).psd: TypeError: masterEngine.block.setParent is not a function
+    at eval (PSDProcessor.tsx:262:32)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:281
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDProcessor.tsx:330 Error processing multiple PSD files: TypeError: masterEngine.block.setParent is not a function
+    at eval (PSDProcessor.tsx:262:32)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:330
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDImportZone.tsx:338 PSD import error: TypeError: masterEngine.block.setParent is not a function
+    at eval (PSDProcessor.tsx:262:32)

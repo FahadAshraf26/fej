@@ -258,12 +258,6 @@ export class PSDProcessor {
             // Duplicate the page within the SAME engine (preserves all assets including buffers)
             const clonedPageId = masterEngine.block.duplicate(pageId);
 
-            // Remove the cloned page from current scene
-            masterEngine.block.setParent(clonedPageId, null);
-
-            // Append the cloned page to the master scene
-            masterEngine.block.appendChild(masterScene, clonedPageId);
-
             // Track which PSD this page came from
             pageSourceMap.set(totalPagesAdded, {
               fileName,
@@ -272,11 +266,21 @@ export class PSDProcessor {
             });
 
             totalPagesAdded++;
-            console.log(`Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
+            console.log(`Duplicated page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
           }
 
-          // Destroy the temporary scene (but keep the cloned pages in master scene)
-          masterEngine.scene.destroy(currentScene);
+          // Load the master scene before appending duplicated pages
+          await masterEngine.scene.load(masterScene);
+          
+          // Now get all pages from current loaded scene and move them to master scene
+          const allCurrentPages = masterEngine.scene.getPages();
+          
+          // Append all duplicated pages to master scene (appendChild automatically reparents)
+          for (let idx = pagesInArchive.length; idx < allCurrentPages.length; idx++) {
+            const duplicatedPageId = allCurrentPages[idx];
+            masterEngine.block.appendChild(masterScene, duplicatedPageId);
+            console.log(`Moved duplicated page to master scene`);
+          }
         } catch (error) {
           console.error(`Error adding pages from ${fileName}:`, error);
           throw error;
