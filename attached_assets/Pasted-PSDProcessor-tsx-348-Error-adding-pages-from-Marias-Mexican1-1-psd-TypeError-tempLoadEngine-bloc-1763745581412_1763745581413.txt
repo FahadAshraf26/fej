@@ -1,0 +1,218 @@
+PSDProcessor.tsx:348 Error adding pages from Marias_Mexican1 (1).psd: TypeError: tempLoadEngine.block.hasProperty is not a function
+    at eval (PSDProcessor.tsx:273:63)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:348
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDProcessor.tsx:402 Error processing multiple PSD files: TypeError: tempLoadEngine.block.hasProperty is not a function
+    at eval (PSDProcessor.tsx:273:63)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:402
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDImportZone.tsx:338 PSD import error: TypeError: tempLoadEngine.block.hasProperty is not a function
+    at eval (PSDProcessor.tsx:273:63)

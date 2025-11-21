@@ -215,7 +215,7 @@ export class PSDProcessor {
         throw new Error("No PSD files were parsed successfully");
       }
 
-      // Step 2: Create a master scene and manually add pages from each PSD
+      // Step 2: Create master engine and load all PSD archives into it (WITHIN SAME ENGINE)
       masterEngine = await this.createTemporaryEngine();
 
       if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
@@ -231,108 +231,38 @@ export class PSDProcessor {
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
       let totalPagesAdded = 0;
 
-      // Load each PSD archive and clone its pages into the master scene
+      // Load each PSD archive directly into the master engine (avoids cross-engine buffer issues)
       for (let i = 0; i < parsedArchives.length; i++) {
         const { archive, fileName, pageName } = parsedArchives[i];
-        let tempLoadEngine: any = null;
 
         try {
-          console.log(`Adding pages from PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
+          console.log(`Loading PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
 
-          // Create a temporary engine to load this archive
-          tempLoadEngine = await this.createTemporaryEngine();
-
-          // Load the archive into the temporary engine
+          // Create a temporary scene to load this archive
+          const tempScene = masterEngine.scene.create();
+          
+          // Load the archive into the temporary scene
           const archiveUrl = URL.createObjectURL(archive);
-          await tempLoadEngine.scene.loadFromArchiveURL(archiveUrl);
+          await masterEngine.scene.loadFromArchiveURL(archiveUrl);
           URL.revokeObjectURL(archiveUrl);
 
-          // Get all pages from this loaded archive
-          const pagesInArchive = tempLoadEngine.block.findByType("page");
+          // Get all pages from the loaded scene (they now exist in master engine)
+          const currentScene = masterEngine.scene.get();
+          const pagesInArchive = masterEngine.scene.getPages();
           console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
 
-          // Clone each page and append to the master scene
+          // Clone each page and append to the master scene (all within same engine)
           for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
             const pageId = pagesInArchive[pageIdx];
             
-            // Duplicate the page (creates a deep copy with all children)
-            const clonedPageId = tempLoadEngine.block.duplicate(pageId);
+            // Duplicate the page within the SAME engine (preserves all assets including buffers)
+            const clonedPageId = masterEngine.block.duplicate(pageId);
 
-            // CRITICAL: Transfer buffer assets before serialization
-            // Get all blocks in the cloned page to find images
-            const allBlocksInPage = tempLoadEngine.block.findAll();
-            const bufferMapping = new Map<string, string>();
+            // Remove the cloned page from current scene
+            masterEngine.block.setParent(clonedPageId, null);
 
-            for (const blockId of allBlocksInPage) {
-              // Check if this block has a fill (image blocks have fills)
-              if (tempLoadEngine.block.hasFill(blockId)) {
-                const fillId = tempLoadEngine.block.getFill(blockId);
-                
-                // Check if this fill actually has an image property (not all fills are image fills)
-                const fillType = tempLoadEngine.block.getType(fillId);
-                const hasImageProperty = tempLoadEngine.block.hasProperty(fillId, 'fill/image/imageFileURI');
-                
-                if (hasImageProperty) {
-                  try {
-                    // Get the image URI from the fill
-                    const imageUri = tempLoadEngine.block.getString(fillId, 'fill/image/imageFileURI');
-                    
-                    // If it's a buffer:// URI, we need to copy the buffer data
-                    if (imageUri && imageUri.startsWith('buffer://')) {
-                      // Check if we already copied this buffer
-                      if (!bufferMapping.has(imageUri)) {
-                        try {
-                          // Get the buffer length and data from temp engine
-                          const bufferLength = tempLoadEngine.editor.getBufferLength(imageUri);
-                          const bufferData = tempLoadEngine.editor.getBufferData(imageUri, 0, bufferLength);
-                          
-                          // Create a new buffer in the master engine
-                          const newBufferUri = masterEngine.editor.createBuffer();
-                          
-                          // Copy the data to the new buffer
-                          masterEngine.editor.setBufferData(newBufferUri, 0, bufferData);
-                          
-                          // Store the mapping
-                          bufferMapping.set(imageUri, newBufferUri);
-                          console.log(`Copied buffer asset: ${imageUri} -> ${newBufferUri} (${bufferLength} bytes)`);
-                        } catch (bufferError) {
-                          console.warn(`Failed to copy buffer ${imageUri}:`, bufferError);
-                        }
-                      }
-                    }
-                  } catch (imageError) {
-                    // Skip blocks that don't have image fills (e.g., color fills, gradient fills)
-                    continue;
-                  }
-                }
-              }
-            }
-
-            // Serialize the cloned page as a string (correct CESDK API)
-            const pageString = await tempLoadEngine.block.saveToString([clonedPageId]);
-
-            // Import the page into the master engine (correct CESDK API)
-            const importedBlockIds = await masterEngine.block.loadFromString(pageString);
-            const importedPageId = importedBlockIds[0]; // First block is the page
-
-            // Now update all buffer:// URIs in the imported page to use the new buffers
-            const importedBlocks = masterEngine.block.findAll();
-            for (const blockId of importedBlocks) {
-              if (masterEngine.block.hasFill(blockId)) {
-                const fillId = masterEngine.block.getFill(blockId);
-                const imageUri = masterEngine.block.getString(fillId, 'fill/image/imageFileURI');
-                
-                // Replace old buffer URI with new one from our mapping
-                if (imageUri && bufferMapping.has(imageUri)) {
-                  const newBufferUri = bufferMapping.get(imageUri);
-                  masterEngine.block.setString(fillId, 'fill/image/imageFileURI', newBufferUri);
-                  console.log(`Updated image URI: ${imageUri} -> ${newBufferUri}`);
-                }
-              }
-            }
-
-            // Append the imported page to the master scene
-            masterEngine.block.appendChild(masterScene, importedPageId);
+            // Append the cloned page to the master scene
+            masterEngine.block.appendChild(masterScene, clonedPageId);
 
             // Track which PSD this page came from
             pageSourceMap.set(totalPagesAdded, {
@@ -344,19 +274,17 @@ export class PSDProcessor {
             totalPagesAdded++;
             console.log(`Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
           }
+
+          // Destroy the temporary scene (but keep the cloned pages in master scene)
+          masterEngine.scene.destroy(currentScene);
         } catch (error) {
           console.error(`Error adding pages from ${fileName}:`, error);
           throw error;
-        } finally {
-          if (tempLoadEngine) {
-            try {
-              await tempLoadEngine.dispose();
-            } catch (cleanupError) {
-              console.warn("Error disposing temp load engine:", cleanupError);
-            }
-          }
         }
       }
+
+      // Switch to the master scene
+      await masterEngine.scene.load(masterScene);
 
       // Get final page list from master scene
       const finalPages = masterEngine.block.findByType("page");
