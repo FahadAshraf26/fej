@@ -272,22 +272,22 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         }
 
         setMergeProgress(10);
-        toast("Merging PSD files into a single menu...", { type: "info" });
+        toast("Processing PSD files into pages...", { type: "info" });
 
         const PSDProcessorModule = await import("./PSDProcessor");
         const PSDProcessor = PSDProcessorModule.default;
         const psdProcessor = PSDProcessor.getInstance();
 
         setMergeProgress(30);
-        const mergeResult = await psdProcessor.mergeMultiplePSDScenes(sceneArchives);
+        const processResult = await psdProcessor.processMultiplePSDFiles(sceneArchives);
 
         setMergeProgress(90);
         await new Promise((resolve) => setTimeout(resolve, 100));
         setMergeProgress(100);
 
-        const archiveFileName = `merged-${Date.now()}.scene`;
         const totalFileSize = fileList.reduce((sum, f) => sum + f.file.size, 0);
 
+        // For multi-page architecture: store all archives with page metadata
         const sceneData = {
           version: "1.0.0",
           meta: {
@@ -298,20 +298,28 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
             created: new Date().toISOString(),
             isPSDImport: true,
             fileSize: totalFileSize,
-            processedArchiveBlob: mergeResult.sceneArchive,
-            processedArchiveFileName: archiveFileName,
+            // Store first archive as main (for backwards compatibility)
+            processedArchiveBlob: processResult.pageArchives[0]?.archive,
+            processedArchiveFileName: `${processResult.pageArchives[0]?.pageName || 'menu'}-${Date.now()}.scene`,
             originalFileName: fileList.map((f) => f.file.name).join(", "),
             isProcessedArchive: true,
             needsFirstSave: true,
-            processingMessages: mergeResult.messages || [],
-            isMultiPSDImport: true,
-            pageNames: mergeResult.pageNames || [],
+            processingMessages: processResult.messages || [],
+            isMultiPSDImport: processResult.pageArchives.length > 1,
+            // Store all page archives for page-switching
+            pageArchives: processResult.pageArchives.map((pa, index) => ({
+              archive: pa.archive,
+              fileName: pa.fileName,
+              pageName: pa.pageName,
+              pageIndex: index,
+            })),
+            currentPageIndex: 0, // Start at first page
           },
-          pages: mergeResult.pageNames.map((name, index) => ({
+          pages: processResult.pageArchives.map((pa, index) => ({
             id: `page-${index + 1}`,
-            name: name,
-            width: 800,
-            height: 600,
+            name: pa.pageName,
+            width: 3300, // Default PSD dimensions
+            height: 5100,
             blocks: [],
           })),
         };

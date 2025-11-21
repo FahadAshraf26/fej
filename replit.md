@@ -5,14 +5,31 @@ This is a Next.js 12 application for restaurant menu design and management with 
 
 ## Recent Changes (November 20, 2025)
 
-### Fixed Asset Embedding in Multi-PSD Import (Latest)
-- **Root Cause**: `block.saveToString()` doesn't embed images by default - only stores asset URIs which become invalid when loaded
-- **Solution**: Two-phase approach:
-  1. Save each processed PSD as a complete scene archive (which embeds all assets)
-  2. Extract pages by loading archives into temp engines, then transfer children using `saveToString` with base64 callback
-- **Impact**: Images and assets now properly embedded when merging multiple PSD files into a scene
-- **Technical**: Archives ensure asset persistence, base64 conversion handles cross-engine transfer
-- **File**: `components/PSDImport/PSDProcessor.tsx`
+### Implemented Page-Switching Architecture for Multi-PSD Import (Latest - November 21, 2025)
+- **Discovery**: CESDK has architectural limitation preventing true multi-scene merging
+  - Only one scene can be active per engine instance
+  - Block IDs invalidate on `scene.create()` or `scene.loadFromArchiveURL()`
+  - No API to transfer blocks with embedded assets across scene reloads
+  - Attempts to merge resulted in blank pages due to block ID invalidation
+- **Solution**: Page-switching architecture instead of scene merging:
+  1. Each PSD file is processed into its own scene archive (preserves all assets perfectly)
+  2. All archives are stored in IndexedDB with page metadata (order, names, indices)
+  3. Editor loads one page at a time based on `currentPageIndex`
+  4. PageSwitcher component allows navigation between pages
+  5. Switching loads the selected archive into CESDK engine
+- **User Experience**:
+  - ✅ Import multiple PSDs with drag-and-drop reordering
+  - ✅ Each PSD fully preserved with images, fonts, layers
+  - ✅ Navigate between pages using PageSwitcher UI
+  - ⚠️ Can only edit one page at a time (CESDK limitation)
+  - ⚠️ Pages are separate documents, not one merged menu
+- **Files Modified**:
+  - `components/PSDImport/PSDProcessor.tsx` - Removed merge logic, returns array of archives
+  - `components/PSDImport/PSDImportZone.tsx` - Handles multiple archives with metadata
+  - `components/InitialCreateMenuModal.tsx` - Stores all page archives in IndexedDB
+  - `components/Editor/Configuration/InitializeEditor.ts` - Loads correct page archive on init
+  - `components/Editor/PageSwitcher.tsx` - NEW: Page navigation UI component
+  - `components/Editor/EditorConfig.tsx` - Integrates PageSwitcher into editor
 
 ### Multiple PSD Import with Reordering
 - **New Feature**: Implemented multiple PSD import where each PSD becomes a separate page in the menu

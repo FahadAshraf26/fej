@@ -84,22 +84,57 @@ export const InitializeEditor = async ({
       // If this is a first-time load, skip URL attempt and load from IndexedDB directly
       if (sceneData?.meta?.needsFirstSave && sceneData?.meta?.processedArchiveFileName) {
           const contentId = sceneStorageKey?.replace(/\.json$/i, "") || template?.content;
-          const blobKey = `psd_archive_${contentId}`;
+          
+          const { getBlobFromIndexedDB, removeBlobFromIndexedDB } = await import(
+            "@Helpers/IndexedDBStorage"
+          );
 
           try {
-            const { getBlobFromIndexedDB, removeBlobFromIndexedDB } = await import(
-              "@Helpers/IndexedDBStorage"
-            );
-            const storedBlob = await getBlobFromIndexedDB(blobKey);
+            let storedBlob: Blob | null = null;
+            let archiveUrl: string | null = null;
+            
+            // Check for multi-page import
+            if (sceneData?.meta?.isMultiPSDImport && sceneData?.meta?.pageArchives) {
+              const currentPageIndex = sceneData?.meta?.currentPageIndex || 0;
+              const pageArchiveData = sceneData.meta.pageArchives[currentPageIndex];
+              const pageKey = `psd_archive_${contentId}_page_${currentPageIndex}`;
+              
+              // Try IndexedDB first (fast local access)
+              storedBlob = await getBlobFromIndexedDB(pageKey);
+              
+              // Fallback to server-stored archive if not in IndexedDB
+              if (!storedBlob && pageArchiveData?.archiveUrl) {
+                archiveUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/templates/${pageArchiveData.archiveUrl}`;
+                console.log(`Loading page from server: ${archiveUrl}`);
+              }
+              
+              console.log(`Loading multi-PSD page ${currentPageIndex + 1}/${sceneData.meta.pageArchives.length}`);
+              
+              // Don't remove archives - keep them for page switching
+            } else {
+              // Single page import (backwards compatibility)
+              const blobKey = `psd_archive_${contentId}`;
+              storedBlob = await getBlobFromIndexedDB(blobKey);
+            }
 
             if (storedBlob) {
-              // Load from blob
+              // Load from IndexedDB blob
               const tempArchiveUrl = URL.createObjectURL(storedBlob);
               await cesdkInstance.current?.engine.scene.loadFromArchiveURL(tempArchiveUrl);
               URL.revokeObjectURL(tempArchiveUrl);
               hasLoadedScene = true;
-
-              await removeBlobFromIndexedDB(blobKey);
+            } else if (archiveUrl) {
+              // Load from server URL
+              await cesdkInstance.current?.engine.scene.loadFromArchiveURL(archiveUrl);
+              hasLoadedScene = true;
+            }
+            
+            if (hasLoadedScene) {
+              // Only remove single-page archives (multi-page archives are kept for switching)
+              if (!sceneData?.meta?.isMultiPSDImport) {
+                const blobKey = `psd_archive_${contentId}`;
+                await removeBlobFromIndexedDB(blobKey);
+              }
 
               if (sceneData?.meta?.needsFirstSave) {
                 // Use shared savePSDArchive utility function
