@@ -258,11 +258,12 @@ export class PSDProcessor {
             // Duplicate the page (creates a deep copy with all children)
             const clonedPageId = tempLoadEngine.block.duplicate(pageId);
 
-            // Export the cloned page as a string
-            const pageString = await tempLoadEngine.block.exportToString(clonedPageId);
+            // Serialize the cloned page as a string (correct CESDK API)
+            const pageString = await tempLoadEngine.block.saveToString([clonedPageId]);
 
-            // Import the page into the master engine
-            const importedPageId = await masterEngine.block.importFromString(pageString);
+            // Import the page into the master engine (correct CESDK API)
+            const importedBlockIds = await masterEngine.block.loadFromString(pageString);
+            const importedPageId = importedBlockIds[0]; // First block is the page
 
             // Append the imported page to the master scene
             masterEngine.block.appendChild(masterScene, importedPageId);

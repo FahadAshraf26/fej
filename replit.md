@@ -14,9 +14,10 @@ This is a Next.js 12 application for restaurant menu design and management with 
 - **Implementation**: True multi-page menu using CESDK's native features:
   1. **Step 1**: Parse each PSD in its own temporary engine, save as scene archive
   2. **Step 2**: Create master scene with VerticalStack layout
-  3. **Step 3**: Use `applyTemplateFromURL()` to merge all PSD archives into master scene
-  4. **Step 4**: Save complete multi-page scene as single archive
-  5. **Editor**: Loads one multi-page scene with all PSDs as separate pages
+  3. **Step 3**: Load each archive, clone pages using `block.saveToString()` / `block.loadFromString()`
+  4. **Step 4**: Append cloned pages to master scene using `block.appendChild()`
+  5. **Step 5**: Save complete multi-page scene as single archive
+  6. **Editor**: Loads one multi-page scene with all PSDs as separate pages
 - **User Experience**:
   - ✅ Import multiple PSDs with drag-and-drop reordering
   - ✅ All PSDs combined into ONE multi-page menu
@@ -24,8 +25,13 @@ This is a Next.js 12 application for restaurant menu design and management with 
   - ✅ Pages automatically arranged vertically by CESDK
   - ✅ CESDK's native page navigation UI (no custom component needed)
   - ✅ All pages editable within single scene
+- **Technical Details**:
+  - Uses CESDK's `block.saveToString([pageId])` to serialize pages with all children
+  - Uses `block.loadFromString(pageString)` to deserialize into master engine
+  - Pages cloned with `block.duplicate()` before serialization for deep copying
+  - Metadata tracks source PSD per page for UI display
 - **Files Modified**:
-  - `components/PSDImport/PSDProcessor.tsx` - Two-step parse + merge using applyTemplateFromURL
+  - `components/PSDImport/PSDProcessor.tsx` - Two-step parse + clone using block APIs
   - `components/PSDImport/PSDImportZone.tsx` - Handles single multi-page scene
   - `components/InitialCreateMenuModal.tsx` - Stores ONE scene archive with page metadata
   - `components/Editor/Configuration/InitializeEditor.ts` - Loads multi-page scene
