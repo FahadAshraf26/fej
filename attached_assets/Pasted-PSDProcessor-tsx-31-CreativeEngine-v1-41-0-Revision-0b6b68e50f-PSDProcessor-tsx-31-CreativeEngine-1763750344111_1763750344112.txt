@@ -1,0 +1,137 @@
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:163 Parsing PSD 1/6: Marias_Mexican1 (1).psd
+PSDProcessor.tsx:183 Created master scene 0 with VerticalStack layout
+PSDProcessor.tsx:200 Master scene has 1 page(s) from Marias_Mexican1 (1).psd
+PSDProcessor.tsx:212 Parsing PSD 2/6: Marias_Mexican2.psd
+PSDProcessor.tsx:228 PSD created new scene 1048576
+PSDProcessor.tsx:232 Found 1 page(s) in new scene
+PSDProcessor.tsx:250 Error processing Marias_Mexican2.psd: Error: Block 0 is unknown.
+
+    at Ct (index.js:28:204221)
+    at BlockAPI.appendChild (index.js:28:230107)
+    at BlockAPI.r [as appendChild] (index.js:28:303150)
+    at eval (PSDProcessor.tsx:236:26)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:250
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+eval @ _async_to_generator.mjs:36
+eval @ _async_to_generator.mjs:25
+processMultiplePSDFiles @ PSDProcessor.tsx:293
+eval @ PSDImportZone.tsx:289
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDProcessor.tsx:282 Error processing PSD files: Error: Block 0 is unknown.
+
+    at Ct (index.js:28:204221)
+    at BlockAPI.appendChild (index.js:28:230107)
+    at BlockAPI.r [as appendChild] (index.js:28:303150)
+    at eval (PSDProcessor.tsx:236:26)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:282
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+eval @ _async_to_generator.mjs:36
+eval @ _async_to_generator.mjs:25
+processMultiplePSDFiles @ PSDProcessor.tsx:293
+eval @ PSDImportZone.tsx:289
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDImportZone.tsx:338 PSD import error: Error: Block 0 is unknown.
+
+    at Ct (index.js:28:204221)
+    at BlockAPI.appendChild (index.js:28:230107)
+    at BlockAPI.r [as appendChild] (index.js:28:303150)
+    at eval (PSDProcessor.tsx:236:26)
+    at step (tslib.es6.mjs:182:21)
+    at Object.eval [as next] (tslib.es6.mjs:163:51)
+    at asyncGeneratorStep (_async_to_generator.mjs:7:24)
+    at _next (_async_to_generator.mjs:29:9)
+window.console.error @ next-dev.js:28
+eval @ PSDImportZone.tsx:338
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_throw @ _async_to_generator.mjs:33
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29

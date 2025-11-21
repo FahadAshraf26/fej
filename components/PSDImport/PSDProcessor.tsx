@@ -159,48 +159,13 @@ export class PSDProcessor {
         console.warn("Google Fonts loading failed, continuing without them:", fontError);
       }
 
-      // Parse first PSD to create master scene
-      console.log(`Parsing PSD 1/${inputs.length}: ${inputs[0].fileName}`);
-      const firstInput = inputs[0];
-      if (!firstInput.file) {
-        throw new Error("First file is missing");
-      }
-
-      let fileBuffer = await firstInput.file.arrayBuffer();
-      let parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
-      let result = await parser.parse();
-
-      if (result && result.logger) {
-        allMessages.push(...(result.logger.getMessages() || []));
-      }
-
-      if (!result) {
-        throw new Error(`Failed to parse first PSD: ${firstInput.fileName}`);
-      }
-
-      const masterSceneId = engine.scene.get();
-      engine.block.setEnum(masterSceneId, "scene/layout", "VerticalStack");
-      console.log(`Created master scene ${masterSceneId} with VerticalStack layout`);
-
-      // Track pages
+      // Track all duplicated pages and metadata
+      const allDuplicatedPages: number[] = [];
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
       let currentPageIndex = 0;
-      
-      let pages = engine.block.findByType("page");
-      let pageName = firstInput.fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
-      
-      for (let i = 0; i < pages.length; i++) {
-        pageSourceMap.set(currentPageIndex++, {
-          fileName: firstInput.fileName,
-          psdName: pageName,
-          pageIndexInPSD: i,
-        });
-      }
 
-      console.log(`Master scene has ${pages.length} page(s) from ${firstInput.fileName}`);
-
-      // Process remaining PSDs in the SAME engine
-      for (let i = 1; i < inputs.length; i++) {
+      // Parse each PSD and duplicate its pages to preserve them
+      for (let i = 0; i < inputs.length; i++) {
         const { file, fileName } = inputs[i];
 
         if (!file) {
@@ -211,9 +176,9 @@ export class PSDProcessor {
         try {
           console.log(`Parsing PSD ${i + 1}/${inputs.length}: ${fileName}`);
 
-          fileBuffer = await file.arrayBuffer();
-          parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
-          result = await parser.parse();
+          const fileBuffer = await file.arrayBuffer();
+          const parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
+          const result = await parser.parse();
 
           if (result && result.logger) {
             allMessages.push(...(result.logger.getMessages() || []));
@@ -223,36 +188,46 @@ export class PSDProcessor {
             throw new Error(`Failed to parse PSD: ${fileName}`);
           }
 
-          // Get the new scene that was just created
-          const newSceneId = engine.scene.get();
-          console.log(`PSD created new scene ${newSceneId}`);
+          const sceneId = engine.scene.get();
+          console.log(`PSD created scene ${sceneId}`);
 
-          // Get all pages from the new scene
-          const newPages = engine.block.findByType("page");
-          console.log(`Found ${newPages.length} page(s) in new scene`);
+          // Get pages and duplicate them immediately (preserves them as orphans)
+          const pages = engine.block.findByType("page");
+          console.log(`Found ${pages.length} page(s), duplicating to preserve them`);
 
-          // Move pages from new scene to master scene (appendChild auto-reparents!)
-          for (const pageId of newPages) {
-            engine.block.appendChild(masterSceneId, pageId);
-          }
+          for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+            const pageId = pages[pageIdx];
+            const duplicatedPageId = engine.block.duplicate(pageId);
+            allDuplicatedPages.push(duplicatedPageId);
 
-          pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
-          for (let pageIdx = 0; pageIdx < newPages.length; pageIdx++) {
+            const pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
             pageSourceMap.set(currentPageIndex++, {
               fileName,
               psdName: pageName,
               pageIndexInPSD: pageIdx,
             });
-          }
 
-          console.log(`Moved ${newPages.length} page(s) from scene ${newSceneId} to master scene ${masterSceneId}`);
+            console.log(`Duplicated page ${pageIdx + 1}/${pages.length} from ${fileName} (ID: ${duplicatedPageId})`);
+          }
         } catch (error) {
           console.error(`Error processing ${fileName}:`, error);
           throw error;
         }
       }
 
-      console.log(`All PSDs processed! Master scene now has ${currentPageIndex} total page(s)`)
+      console.log(`All ${inputs.length} PSDs parsed, ${allDuplicatedPages.length} pages duplicated`);
+
+      // Create final master scene and add all duplicated pages
+      const masterSceneId = engine.scene.create();
+      engine.block.setEnum(masterSceneId, "scene/layout", "VerticalStack");
+      console.log(`Created master scene ${masterSceneId} with VerticalStack layout`);
+
+      // Add all duplicated pages to master scene
+      for (const pageId of allDuplicatedPages) {
+        engine.block.appendChild(masterSceneId, pageId);
+      }
+
+      console.log(`Added all ${allDuplicatedPages.length} pages to master scene`)
 
       // Build metadata
       const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
