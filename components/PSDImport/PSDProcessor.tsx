@@ -116,8 +116,7 @@ export class PSDProcessor {
 
   /**
    * Processes multiple PSD files into a SINGLE multi-page scene
-   * Uses CESDK's native multi-page support - each PSD becomes a page in ONE scene
-   * Pages are automatically arranged vertically by CESDK
+   * Simplified approach: Only process first PSD for now to verify images work
    */
   public async processMultiplePSDFiles(
     inputs: Array<{ archive?: Blob; file?: File; fileName: string }>
@@ -137,7 +136,7 @@ export class PSDProcessor {
     }
 
     const allMessages: any[] = [];
-    let masterEngine: any = null;
+    let engine: any = null;
 
     try {
       // Import PSD importer utilities
@@ -146,176 +145,77 @@ export class PSDProcessor {
       );
       const encodeBufferToPNG = createWebEncodeBufferToPNG();
 
-      // Step 1: Parse each PSD into its own temporary scene and save as archive
-      const parsedArchives: Array<{ archive: Blob; fileName: string; pageName: string }> = [];
+      // Create engine
+      engine = await this.createTemporaryEngine();
 
-      for (let i = 0; i < inputs.length; i++) {
-        const { file, fileName } = inputs[i];
-
-        if (!file) {
-          console.warn(`Skipping ${fileName} - no file provided`);
-          continue;
-        }
-
-        let tempEngine: any = null;
-
-        try {
-          console.log(`Parsing PSD ${i + 1}/${inputs.length}: ${fileName}`);
-
-          // Create temporary engine for this PSD
-          tempEngine = await this.createTemporaryEngine();
-
-          if (!tempEngine.asset || !tempEngine.scene || !tempEngine.block) {
-            throw new Error("Creative Engine not fully initialized");
-          }
-
-          // Add Google Fonts support
-          try {
-            addGoogleFontsAssetLibrary(tempEngine);
-          } catch (fontError) {
-            console.warn("Google Fonts loading failed, continuing without them:", fontError);
-          }
-
-          const fileBuffer = await file.arrayBuffer();
-
-          // Parse PSD into this temporary scene
-          const parser = await PSDParser.fromFile(tempEngine, fileBuffer, encodeBufferToPNG);
-          const result = await parser.parse();
-
-          if (result && result.logger) {
-            const messages = result.logger.getMessages() || [];
-            allMessages.push(...messages);
-          }
-
-          if (!result) {
-            throw new Error(`Failed to parse PSD file: ${fileName}`);
-          }
-
-          // Save this PSD's scene as an archive (preserves all assets)
-          const archive = await tempEngine.scene.saveToArchive();
-          const pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
-
-          parsedArchives.push({ archive, fileName, pageName });
-          console.log(`Parsed and saved "${pageName}" as archive`);
-        } catch (error) {
-          console.error(`Error parsing PSD file ${fileName}:`, error);
-          throw error;
-        } finally {
-          if (tempEngine) {
-            try {
-              await tempEngine.dispose();
-            } catch (cleanupError) {
-              console.warn("Error disposing temp engine:", cleanupError);
-            }
-          }
-        }
+      if (!engine.asset || !engine.scene || !engine.block) {
+        throw new Error("Creative Engine not fully initialized");
       }
 
-      if (parsedArchives.length === 0) {
-        throw new Error("No PSD files were parsed successfully");
+      // Add Google Fonts support
+      try {
+        addGoogleFontsAssetLibrary(engine);
+      } catch (fontError) {
+        console.warn("Google Fonts loading failed, continuing without them:", fontError);
       }
 
-      // Step 2: Create master engine and load first PSD as base scene
-      masterEngine = await this.createTemporaryEngine();
-
-      if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
-        throw new Error("Master engine not fully initialized");
+      // SIMPLIFIED: Only process first PSD for now
+      console.log(`Processing FIRST PSD only (simplified test): ${inputs[0].fileName}`);
+      const firstInput = inputs[0];
+      if (!firstInput.file) {
+        throw new Error("First file is missing");
       }
 
-      console.log("Loading first PSD as base scene...");
-      const firstArchive = parsedArchives[0];
-      const firstArchiveUrl = URL.createObjectURL(firstArchive.archive);
-      await masterEngine.scene.loadFromArchiveURL(firstArchiveUrl);
-      URL.revokeObjectURL(firstArchiveUrl);
+      const fileBuffer = await firstInput.file.arrayBuffer();
+      const parser = await PSDParser.fromFile(engine, fileBuffer, encodeBufferToPNG);
+      const result = await parser.parse();
 
-      const masterScene = masterEngine.scene.get();
-      masterEngine.block.setEnum(masterScene, "scene/layout", "VerticalStack");
-      console.log(`Loaded base scene with ${masterEngine.block.findByType("page").length} page(s), set VerticalStack layout`);
+      if (result && result.logger) {
+        allMessages.push(...(result.logger.getMessages() || []));
+      }
 
-      // Map to track which PSD each page came from
+      if (!result) {
+        throw new Error(`Failed to parse PSD: ${firstInput.fileName}`);
+      }
+
+      const scene = engine.scene.get();
+      engine.block.setEnum(scene, "scene/layout", "VerticalStack");
+      console.log(`Parsed first PSD with VerticalStack layout`);
+
+      // Track pages
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
+      const pages = engine.block.findByType("page");
+      const pageName = firstInput.fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
       
-      // Track pages from first PSD
-      let firstPsdPages = masterEngine.block.findByType("page");
-      for (let i = 0; i < firstPsdPages.length; i++) {
+      for (let i = 0; i < pages.length; i++) {
         pageSourceMap.set(i, {
-          fileName: firstArchive.fileName,
-          psdName: firstArchive.pageName,
+          fileName: firstInput.fileName,
+          psdName: pageName,
           pageIndexInPSD: i,
         });
       }
-      let totalPagesAdded = firstPsdPages.length;
 
-      // Merge remaining PSDs using applyTemplateFromURL (CESDK's native merge)
-      for (let i = 1; i < parsedArchives.length; i++) {
-        const { archive, fileName, pageName } = parsedArchives[i];
+      console.log(`Scene has ${pages.length} page(s) from ${firstInput.fileName}`);
+      console.log(`NOTE: Only processing first PSD - this is a simplified test to verify images work`)
 
-        try {
-          console.log(`Merging PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
-
-          // Create URL for this archive
-          const archiveUrl = URL.createObjectURL(archive);
-
-          // Use CESDK's native merge API - preserves assets!
-          await masterEngine.scene.applyTemplateFromURL(archiveUrl);
-          URL.revokeObjectURL(archiveUrl);
-
-          // Count pages that were just added
-          const currentPages = masterEngine.block.findByType("page");
-          const newPagesCount = currentPages.length - totalPagesAdded;
-          
-          console.log(`Merged ${newPagesCount} page(s) from ${fileName}`);
-
-          // Track source for new pages
-          for (let pageIdx = 0; pageIdx < newPagesCount; pageIdx++) {
-            pageSourceMap.set(totalPagesAdded + pageIdx, {
-              fileName,
-              psdName: pageName,
-              pageIndexInPSD: pageIdx,
-            });
-          }
-
-          totalPagesAdded = currentPages.length;
-        } catch (error) {
-          console.error(`Error merging ${fileName}:`, error);
-          throw error;
-        }
-      }
-
-      // Get final page list from master scene
-      const finalPages = masterEngine.block.findByType("page");
-      console.log(`Master scene contains ${finalPages.length} page(s) total`);
-
-      // Build accurate metadata from actual pages in the master scene
+      // Build metadata
       const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
+      const finalPages = engine.block.findByType("page");
       
       for (let i = 0; i < finalPages.length; i++) {
         const pageSource = pageSourceMap.get(i);
         if (pageSource) {
-          const pageDisplayName = finalPages.length > parsedArchives.length
-            ? `${pageSource.psdName} - Page ${pageSource.pageIndexInPSD + 1}` // Multi-page PSD
-            : pageSource.psdName; // Single page per PSD
-
           pageMetadata.push({
             fileName: pageSource.fileName,
-            pageName: pageDisplayName,
-            pageIndex: i,
-          });
-        } else {
-          // Fallback if source mapping failed
-          pageMetadata.push({
-            fileName: `unknown-${i}`,
-            pageName: `Page ${i + 1}`,
+            pageName: pageSource.psdName,
             pageIndex: i,
           });
         }
       }
 
-      console.log(`Generated metadata for ${pageMetadata.length} page(s)`);
-
-      // Save the master multi-page scene
-      const sceneArchive = await masterEngine.scene.saveToArchive();
-      console.log(`Saved master scene: ${sceneArchive.size} bytes with ${pageMetadata.length} PSDs`);
+      // Save scene
+      const sceneArchive = await engine.scene.saveToArchive();
+      console.log(`Saved scene: ${sceneArchive.size} bytes with ${pageMetadata.length} page(s)`);
 
       return {
         sceneArchive,
@@ -323,14 +223,14 @@ export class PSDProcessor {
         messages: allMessages,
       };
     } catch (error) {
-      console.error("Error processing multiple PSD files:", error);
+      console.error("Error processing PSD files:", error);
       throw error;
     } finally {
-      if (masterEngine) {
+      if (engine) {
         try {
-          await masterEngine.dispose();
+          await engine.dispose();
         } catch (cleanupError) {
-          console.warn("Error disposing master engine:", cleanupError);
+          console.warn("Error disposing engine:", cleanupError);
         }
       }
     }

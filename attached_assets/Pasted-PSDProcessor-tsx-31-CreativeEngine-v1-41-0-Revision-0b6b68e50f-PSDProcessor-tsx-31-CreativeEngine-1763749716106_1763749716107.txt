@@ -1,0 +1,298 @@
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:163 Parsing PSD 1/6: Marias_Mexican1 (1).psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican1" as archive
+PSDProcessor.tsx:163 Parsing PSD 2/6: Marias_Mexican2.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican2" as archive
+PSDProcessor.tsx:163 Parsing PSD 3/6: Marias_Mexican3.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican3" as archive
+PSDProcessor.tsx:163 Parsing PSD 4/6: Marias_Mexican4.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican4" as archive
+PSDProcessor.tsx:163 Parsing PSD 5/6: Marias_Mexican5.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican5" as archive
+PSDProcessor.tsx:163 Parsing PSD 6/6: Marias_Mexican6.psd
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:199 Parsed and saved "Marias_Mexican6" as archive
+PSDProcessor.tsx:31 [CreativeEngine] v1.41.0 Revision 0b6b68e50f
+PSDProcessor.tsx:225 Loading first PSD as base scene...
+PSDProcessor.tsx:233 Loaded base scene with 1 page(s), set VerticalStack layout
+PSDProcessor.tsx:254 Merging PSD 2/6: Marias_Mexican2
+PSDProcessor.tsx:280 Error merging Marias_Mexican2.psd: Error: Received scene input is not a valid serialization.
+
+    at Ct (index.js:28:204221)
+    at eval (index.js:28:204297)
+    at methodCaller<(UBQResult<void>) => emscripten::val> (webpack-internal:///node_modules/@cesdk/engine/index.js:28:177690)
+    at x (index.js:28:177143)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x12c288
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x143e9f5
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfd507c
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x6fe0d8
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfdcc21
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x9505b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x19df0d
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x145f227
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x153619
+    at UBQ.update (index.js:28:107209)
+    at #E (index.js:28:333309)
+    at o (index.js:28:332426)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:280
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_throw @ _async_to_generator.mjs:33
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDProcessor.tsx:326 Error processing multiple PSD files: Error: Received scene input is not a valid serialization.
+
+    at Ct (index.js:28:204221)
+    at eval (index.js:28:204297)
+    at methodCaller<(UBQResult<void>) => emscripten::val> (webpack-internal:///node_modules/@cesdk/engine/index.js:28:177690)
+    at x (index.js:28:177143)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x12c288
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x143e9f5
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfd507c
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x6fe0d8
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfdcc21
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x9505b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x19df0d
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x145f227
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x153619
+    at UBQ.update (index.js:28:107209)
+    at #E (index.js:28:333309)
+    at o (index.js:28:332426)
+window.console.error @ next-dev.js:28
+eval @ PSDProcessor.tsx:326
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_throw @ _async_to_generator.mjs:33
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+PSDImportZone.tsx:338 PSD import error: Error: Received scene input is not a valid serialization.
+
+    at Ct (index.js:28:204221)
+    at eval (index.js:28:204297)
+    at methodCaller<(UBQResult<void>) => emscripten::val> (webpack-internal:///node_modules/@cesdk/engine/index.js:28:177690)
+    at x (index.js:28:177143)
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x12c288
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x143e9f5
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfd507c
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x6fe0d8
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0xfdcc21
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x9505b
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x19df0d
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x145f227
+    at cesdk-v1.41.0-JXIVAUV3.wasm:0x153619
+    at UBQ.update (index.js:28:107209)
+    at #E (index.js:28:333309)
+    at o (index.js:28:332426)
+window.console.error @ next-dev.js:28
+eval @ PSDImportZone.tsx:338
+step @ tslib.es6.mjs:182
+eval @ tslib.es6.mjs:163
+asyncGeneratorStep @ _async_to_generator.mjs:7
+_throw @ _async_to_generator.mjs:33
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
+Promise.then
+asyncGeneratorStep @ _async_to_generator.mjs:17
+_next @ _async_to_generator.mjs:29
