@@ -215,80 +215,69 @@ export class PSDProcessor {
         throw new Error("No PSD files were parsed successfully");
       }
 
-      // Step 2: Create a master scene and load all archives into SAME engine
+      // Step 2: Create master engine and load first PSD as base scene
       masterEngine = await this.createTemporaryEngine();
 
       if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
         throw new Error("Master engine not fully initialized");
       }
 
-      // Create master scene with vertical layout
-      const masterScene = masterEngine.scene.create();
+      console.log("Loading first PSD as base scene...");
+      const firstArchive = parsedArchives[0];
+      const firstArchiveUrl = URL.createObjectURL(firstArchive.archive);
+      await masterEngine.scene.loadFromArchiveURL(firstArchiveUrl);
+      URL.revokeObjectURL(firstArchiveUrl);
+
+      const masterScene = masterEngine.scene.get();
       masterEngine.block.setEnum(masterScene, "scene/layout", "VerticalStack");
-      console.log("Created master multi-page scene with VerticalStack layout");
+      console.log(`Loaded base scene with ${masterEngine.block.findByType("page").length} page(s), set VerticalStack layout`);
 
       // Map to track which PSD each page came from
       const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
-      let totalPagesAdded = 0;
+      
+      // Track pages from first PSD
+      let firstPsdPages = masterEngine.block.findByType("page");
+      for (let i = 0; i < firstPsdPages.length; i++) {
+        pageSourceMap.set(i, {
+          fileName: firstArchive.fileName,
+          psdName: firstArchive.pageName,
+          pageIndexInPSD: i,
+        });
+      }
+      let totalPagesAdded = firstPsdPages.length;
 
-      // Load each PSD archive into master engine and duplicate pages (preserves buffers!)
-      for (let i = 0; i < parsedArchives.length; i++) {
+      // Merge remaining PSDs using applyTemplateFromURL (CESDK's native merge)
+      for (let i = 1; i < parsedArchives.length; i++) {
         const { archive, fileName, pageName } = parsedArchives[i];
 
         try {
-          console.log(`Adding pages from PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
+          console.log(`Merging PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
 
-          // Load archive into engine (creates a new scene, replacing current active scene)
+          // Create URL for this archive
           const archiveUrl = URL.createObjectURL(archive);
-          await masterEngine.scene.loadFromArchiveURL(archiveUrl);
+
+          // Use CESDK's native merge API - preserves assets!
+          await masterEngine.scene.applyTemplateFromURL(archiveUrl);
           URL.revokeObjectURL(archiveUrl);
 
-          // Get the temp scene that was just loaded
-          const tempSceneId = masterEngine.scene.get();
-          const pagesInArchive = masterEngine.block.findByType("page");
-          console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
+          // Count pages that were just added
+          const currentPages = masterEngine.block.findByType("page");
+          const newPagesCount = currentPages.length - totalPagesAdded;
+          
+          console.log(`Merged ${newPagesCount} page(s) from ${fileName}`);
 
-          // Duplicate each page WITHIN THE SAME ENGINE (preserves buffer assets!)
-          const duplicatedPageIds: number[] = [];
-          for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
-            const pageId = pagesInArchive[pageIdx];
-            
-            // Duplicate within same engine - buffers are preserved!
-            const clonedPageId = masterEngine.block.duplicate(pageId);
-            duplicatedPageIds.push(clonedPageId);
-
-            // Track which PSD this page came from
-            pageSourceMap.set(totalPagesAdded, {
+          // Track source for new pages
+          for (let pageIdx = 0; pageIdx < newPagesCount; pageIdx++) {
+            pageSourceMap.set(totalPagesAdded + pageIdx, {
               fileName,
               psdName: pageName,
               pageIndexInPSD: pageIdx,
             });
-
-            totalPagesAdded++;
-            console.log(`Duplicated page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
           }
 
-          // Switch back to master scene
-          masterEngine.scene.load(masterScene);
-          console.log(`Switched to master scene ${masterScene}`);
-
-          // Append all duplicated pages to master scene (auto-reparents them!)
-          for (const dupPageId of duplicatedPageIds) {
-            masterEngine.block.appendChild(masterScene, dupPageId);
-            console.log(`Appended duplicated page ${dupPageId} to master scene`);
-          }
-
-          // Destroy the temporary scene
-          try {
-            if (tempSceneId !== masterScene) {
-              masterEngine.scene.destroy(tempSceneId);
-              console.log(`Destroyed temp scene ${tempSceneId}`);
-            }
-          } catch (destroyError) {
-            console.warn("Could not destroy temp scene:", destroyError);
-          }
+          totalPagesAdded = currentPages.length;
         } catch (error) {
-          console.error(`Error adding pages from ${fileName}:`, error);
+          console.error(`Error merging ${fileName}:`, error);
           throw error;
         }
       }
