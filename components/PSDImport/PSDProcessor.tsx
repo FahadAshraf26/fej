@@ -268,30 +268,41 @@ export class PSDProcessor {
               if (tempLoadEngine.block.hasFill(blockId)) {
                 const fillId = tempLoadEngine.block.getFill(blockId);
                 
-                // Get the image URI from the fill
-                const imageUri = tempLoadEngine.block.getString(fillId, 'fill/image/imageFileURI');
+                // Check if this fill actually has an image property (not all fills are image fills)
+                const fillType = tempLoadEngine.block.getType(fillId);
+                const hasImageProperty = tempLoadEngine.block.hasProperty(fillId, 'fill/image/imageFileURI');
                 
-                // If it's a buffer:// URI, we need to copy the buffer data
-                if (imageUri && imageUri.startsWith('buffer://')) {
-                  // Check if we already copied this buffer
-                  if (!bufferMapping.has(imageUri)) {
-                    try {
-                      // Get the buffer length and data from temp engine
-                      const bufferLength = tempLoadEngine.editor.getBufferLength(imageUri);
-                      const bufferData = tempLoadEngine.editor.getBufferData(imageUri, 0, bufferLength);
-                      
-                      // Create a new buffer in the master engine
-                      const newBufferUri = masterEngine.editor.createBuffer();
-                      
-                      // Copy the data to the new buffer
-                      masterEngine.editor.setBufferData(newBufferUri, 0, bufferData);
-                      
-                      // Store the mapping
-                      bufferMapping.set(imageUri, newBufferUri);
-                      console.log(`Copied buffer asset: ${imageUri} -> ${newBufferUri} (${bufferLength} bytes)`);
-                    } catch (bufferError) {
-                      console.warn(`Failed to copy buffer ${imageUri}:`, bufferError);
+                if (hasImageProperty) {
+                  try {
+                    // Get the image URI from the fill
+                    const imageUri = tempLoadEngine.block.getString(fillId, 'fill/image/imageFileURI');
+                    
+                    // If it's a buffer:// URI, we need to copy the buffer data
+                    if (imageUri && imageUri.startsWith('buffer://')) {
+                      // Check if we already copied this buffer
+                      if (!bufferMapping.has(imageUri)) {
+                        try {
+                          // Get the buffer length and data from temp engine
+                          const bufferLength = tempLoadEngine.editor.getBufferLength(imageUri);
+                          const bufferData = tempLoadEngine.editor.getBufferData(imageUri, 0, bufferLength);
+                          
+                          // Create a new buffer in the master engine
+                          const newBufferUri = masterEngine.editor.createBuffer();
+                          
+                          // Copy the data to the new buffer
+                          masterEngine.editor.setBufferData(newBufferUri, 0, bufferData);
+                          
+                          // Store the mapping
+                          bufferMapping.set(imageUri, newBufferUri);
+                          console.log(`Copied buffer asset: ${imageUri} -> ${newBufferUri} (${bufferLength} bytes)`);
+                        } catch (bufferError) {
+                          console.warn(`Failed to copy buffer ${imageUri}:`, bufferError);
+                        }
+                      }
                     }
+                  } catch (imageError) {
+                    // Skip blocks that don't have image fills (e.g., color fills, gradient fills)
+                    continue;
                   }
                 }
               }
