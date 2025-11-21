@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import { useClipboard } from "@mantine/hooks";
 import dynamic from "next/dynamic";
 import CreativeEditorSDK from "@cesdk/cesdk-js";
-import { PageSwitcher } from "@Components/Editor/PageSwitcher";
 import { eConfiguration } from "@Components/Editor/Configuration/";
 import { InitializeEditor } from "@Components/Editor/Configuration/InitializeEditor";
 import { design } from "@Components/Editor/Utils/data";
@@ -804,13 +803,6 @@ const EditorConfig = ({
           }`}
         >
           <div ref={cesdkContainer} id="cesdkContainer" className="cesdkStyle"></div>
-          {template?.isPSDImport && cesdkInstance?.current?.engine && (
-            <PageSwitcher
-              template={template}
-              sceneStorageKey={template?.content ? `${template.content}.json` : null}
-              engine={cesdkInstance.current.engine}
-            />
-          )}
         </div>
         {template?.isGlobal && user?.role === "flapjack" && (
           <HistorySidebar

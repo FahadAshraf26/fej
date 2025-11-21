@@ -1,0 +1,102 @@
+Based on my research, I can now provide you with a comprehensive answer about scene merging in CE.SDK.
+
+Scene Merging in CE.SDK
+CE.SDK does not have a built-in direct scene merge function. At any given time, the engine holds only a single scene, and loading or creating a new scene replaces the current one.​
+
+However, there are several workarounds to achieve a similar result depending on your use case:
+
+Workaround 1: Copy Blocks Between Scenes
+You can load blocks from one scene and append them to another using the block API:
+
+Use block.saveToString() to serialize blocks from the first scene​
+
+Use block.loadFromString() to deserialize those blocks​
+
+Use block.appendChild() to add the loaded blocks to a page in your target scene​
+
+This approach preserves the block hierarchy and properties while allowing you to combine content from multiple scenes into a single scene.
+
+Workaround 2: Multiple Pages Within a Single Scene
+Rather than working with multiple scenes, you can organize your design into multiple pages within a single scene. Scenes automatically arrange pages in vertical (default) or horizontal layouts, allowing you to work with related content as separate pages that can be navigated.​
+
+Workaround 3: Data Merge for Structured Content
+If you're working with templates, CE.SDK's Data Merge solution enables you to merge structured data into templates programmatically. While this is technically for data interpolation rather than scene merging, it provides a way to generate multiple design variations from a base template.​
+
+Key API Methods for Block Operations
+block.create() – Create new blocks
+
+block.appendChild(parent, child) – Add blocks to a hierarchy
+
+block.saveToString() – Serialize blocks
+
+block.loadFromString() – Deserialize blocks
+
+The block-copying approach is typically the most flexible solution for combining content from different scenes while maintaining full control over the final design structure.
+
+Can we export the page to string and import the whole page without losing fidelity of the blocks?
+
+Yes! You can export and import entire pages using block.saveToString() and block.loadFromString() without losing fidelity.
+
+How It Works
+Exporting a Page to String
+javascript
+// Get the page block ID
+const pageId = engine.block.findByType('page')[0];
+
+// Save the entire page (including all child blocks) to a string
+const pageString = await engine.block.saveToString([pageId]);
+Importing the Page Back
+javascript
+// Load the page from the string
+const loadedBlocks = await engine.block.loadFromString(pageString);
+
+// The loaded blocks are not attached yet
+// You need to append them to make them visible
+const sceneId = engine.scene.get();
+engine.block.appendChild(sceneId, loadedBlocks[0]);
+Key Points About Fidelity
+✅ Full Hierarchy Preserved – When you save a page block, the entire block hierarchy (all children, grandchildren, etc.) is saved​
+
+✅ Properties Maintained – All block properties, styles, and settings are preserved
+
+✅ Asset References Included – References to images, fonts, and other assets are maintained
+
+⚠️ Assets Not Embedded – The string contains references to assets, not the actual asset files themselves. For a fully self-contained export with assets, use block.saveToArchive() instead​
+
+Complete Example for Merging Scenes
+Here's how you could merge pages from multiple scenes:
+
+javascript
+// Load first scene
+await engine.scene.loadFromURL('scene1.scene');
+const page1Id = engine.block.findByType('page')[0];
+const page1String = await engine.block.saveToString([page1Id]);
+
+// Load second scene
+await engine.scene.loadFromURL('scene2.scene');
+const page2Id = engine.block.findByType('page')[0];
+const page2String = await engine.block.saveToString([page2Id]);
+
+// Create new empty scene or load target scene
+await engine.scene.create();
+const sceneId = engine.scene.get();
+
+// Import both pages
+const pages1 = await engine.block.loadFromString(page1String);
+const pages2 = await engine.block.loadFromString(page2String);
+
+// Append both pages to the scene
+engine.block.appendChild(sceneId, pages1[0]);
+engine.block.appendChild(sceneId, pages2[0]);
+For Asset-Complete Export
+If you need assets embedded (for true portability):
+
+javascript
+// Export with assets
+const archiveBlob = await engine.block.saveToArchive([pageId]);
+
+// Later, load the archive
+await engine.scene.loadFromURL(URL.createObjectURL(archiveBlob));
+The saveToArchive() method creates a self-contained .zip bundle with the .scene file and all referenced assets.​
+
+Bottom line: saveToString() and loadFromString() preserve complete block fidelity, making them perfect for programmatically copying pages between scenes.

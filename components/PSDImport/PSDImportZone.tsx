@@ -272,14 +272,21 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         }
 
         setMergeProgress(10);
-        toast("Processing PSD files into pages...", { type: "info" });
+        toast("Creating multi-page scene from PSD files...", { type: "info" });
 
         const PSDProcessorModule = await import("./PSDProcessor");
         const PSDProcessor = PSDProcessorModule.default;
         const psdProcessor = PSDProcessor.getInstance();
 
         setMergeProgress(30);
-        const processResult = await psdProcessor.processMultiplePSDFiles(sceneArchives);
+        
+        // Process all PSDs into a SINGLE multi-page scene
+        const inputs = fileList.map((fileItem) => ({
+          file: fileItem.file,
+          fileName: fileItem.file.name,
+        }));
+        
+        const processResult = await psdProcessor.processMultiplePSDFiles(inputs);
 
         setMergeProgress(90);
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -287,7 +294,7 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
 
         const totalFileSize = fileList.reduce((sum, f) => sum + f.file.size, 0);
 
-        // For multi-page architecture: store all archives with page metadata
+        // Store ONE multi-page scene archive with page metadata
         const sceneData = {
           version: "1.0.0",
           meta: {
@@ -298,26 +305,20 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
             created: new Date().toISOString(),
             isPSDImport: true,
             fileSize: totalFileSize,
-            // Store first archive as main (for backwards compatibility)
-            processedArchiveBlob: processResult.pageArchives[0]?.archive,
-            processedArchiveFileName: `${processResult.pageArchives[0]?.pageName || 'menu'}-${Date.now()}.scene`,
+            // Store the multi-page scene archive
+            processedArchiveBlob: processResult.sceneArchive,
+            processedArchiveFileName: `multi-page-menu-${Date.now()}.scene`,
             originalFileName: fileList.map((f) => f.file.name).join(", "),
             isProcessedArchive: true,
             needsFirstSave: true,
             processingMessages: processResult.messages || [],
-            isMultiPSDImport: processResult.pageArchives.length > 1,
-            // Store all page archives for page-switching
-            pageArchives: processResult.pageArchives.map((pa, index) => ({
-              archive: pa.archive,
-              fileName: pa.fileName,
-              pageName: pa.pageName,
-              pageIndex: index,
-            })),
-            currentPageIndex: 0, // Start at first page
+            isMultiPageScene: processResult.pageMetadata.length > 1,
+            // Store metadata about all pages (for UI display)
+            pageMetadata: processResult.pageMetadata,
           },
-          pages: processResult.pageArchives.map((pa, index) => ({
-            id: `page-${index + 1}`,
-            name: pa.pageName,
+          pages: processResult.pageMetadata.map((pm) => ({
+            id: `page-${pm.pageIndex + 1}`,
+            name: pm.pageName,
             width: 3300, // Default PSD dimensions
             height: 5100,
             blocks: [],

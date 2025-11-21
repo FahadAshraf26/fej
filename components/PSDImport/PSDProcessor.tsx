@@ -115,14 +115,15 @@ export class PSDProcessor {
   }
 
   /**
-   * Processes multiple PSD files into separate scene archives
-   * Each PSD file becomes its own scene archive (CESDK limitation: can't merge scenes)
-   * Returns array of archives for page-switching architecture
+   * Processes multiple PSD files into a SINGLE multi-page scene
+   * Uses CESDK's native multi-page support - each PSD becomes a page in ONE scene
+   * Pages are automatically arranged vertically by CESDK
    */
   public async processMultiplePSDFiles(
     inputs: Array<{ archive?: Blob; file?: File; fileName: string }>
   ): Promise<{ 
-    pageArchives: Array<{ archive: Blob; fileName: string; pageName: string }>; 
+    sceneArchive: Blob;
+    pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }>; 
     messages: any[];
   }> {
     if (typeof window === "undefined") {
@@ -136,148 +137,211 @@ export class PSDProcessor {
     }
 
     const allMessages: any[] = [];
+    let masterEngine: any = null;
 
     try {
-      // Step 1: Process all inputs (either parse PSD files or load scene archives)
-      // Save all scenes as archives (which properly embed assets) for later loading
-      const pageStrings: Array<{ pageString?: string; fileName: string; archive?: Blob }> = [];
-
       // Import PSD importer utilities
       const { PSDParser, createWebEncodeBufferToPNG, addGoogleFontsAssetLibrary } = await import(
         "@imgly/psd-importer"
       );
       const encodeBufferToPNG = createWebEncodeBufferToPNG();
 
+      // Step 1: Parse each PSD into its own temporary scene and save as archive
+      const parsedArchives: Array<{ archive: Blob; fileName: string; pageName: string }> = [];
+
       for (let i = 0; i < inputs.length; i++) {
-        const { archive, file, fileName } = inputs[i];
+        const { file, fileName } = inputs[i];
+
+        if (!file) {
+          console.warn(`Skipping ${fileName} - no file provided`);
+          continue;
+        }
+
         let tempEngine: any = null;
 
         try {
+          console.log(`Parsing PSD ${i + 1}/${inputs.length}: ${fileName}`);
+
+          // Create temporary engine for this PSD
           tempEngine = await this.createTemporaryEngine();
 
-          // If we have a raw PSD file, parse it using @imgly/psd-importer
-          if (file) {
-            // Check engine initialization (same as processPSDFile)
-            if (!tempEngine.asset || !tempEngine.scene) {
-              throw new Error(
-                "Creative Engine not fully initialized. Missing asset or scene modules."
-              );
-            }
-
-            const fileBuffer = await file.arrayBuffer();
-
-            // Add Google Fonts support before parsing (same as single PSD import)
-            try {
-              addGoogleFontsAssetLibrary(tempEngine);
-            } catch (fontError) {
-              console.warn(
-                "Google Fonts loading failed or timed out, continuing without them:",
-                fontError
-              );
-            }
-
-            const parser = await PSDParser.fromFile(tempEngine, fileBuffer, encodeBufferToPNG);
-            const result = await parser.parse();
-
-            if (result && result.logger) {
-              const messages = result.logger.getMessages() || [];
-              allMessages.push(...messages);
-            }
-
-            if (!result) {
-              throw new Error(`Failed to parse PSD file: ${fileName}`);
-            }
-
-            // Verify scene has pages with content
-            const parsedPages = tempEngine.block.findByType("page");
-            if (!parsedPages || parsedPages.length === 0) {
-              throw new Error(`No pages found after parsing ${fileName}`);
-            }
-          } else if (archive) {
-            // If we have a pre-processed archive, load it directly
-            // No need to add Google Fonts here as they should already be in the archive
-            if (!tempEngine.asset || !tempEngine.scene || !tempEngine.block) {
-              throw new Error("Creative Engine not fully initialized for scene loading.");
-            }
-
-            const archiveUrl = URL.createObjectURL(archive);
-            await tempEngine.scene.loadFromArchiveURL(archiveUrl);
-            URL.revokeObjectURL(archiveUrl);
-          } else {
-            throw new Error(`No file or archive provided for ${fileName}`);
+          if (!tempEngine.asset || !tempEngine.scene || !tempEngine.block) {
+            throw new Error("Creative Engine not fully initialized");
           }
 
-          // Ensure block module is available before using it
-          if (!tempEngine.block) {
-            throw new Error("Block module not available after processing.");
+          // Add Google Fonts support
+          try {
+            addGoogleFontsAssetLibrary(tempEngine);
+          } catch (fontError) {
+            console.warn("Google Fonts loading failed, continuing without them:", fontError);
           }
 
-          // Save the entire scene as an archive (all pages and assets included)
-          const tempPageArchive = await tempEngine.scene.saveToArchive();
-          
-          pageStrings.push({ 
-            fileName,
-            archive: tempPageArchive 
-          });
-          
-          console.log(
-            `Saved scene from ${fileName} as archive with embedded assets, size: ${tempPageArchive.size} bytes`
-          );
+          const fileBuffer = await file.arrayBuffer();
+
+          // Parse PSD into this temporary scene
+          const parser = await PSDParser.fromFile(tempEngine, fileBuffer, encodeBufferToPNG);
+          const result = await parser.parse();
+
+          if (result && result.logger) {
+            const messages = result.logger.getMessages() || [];
+            allMessages.push(...messages);
+          }
+
+          if (!result) {
+            throw new Error(`Failed to parse PSD file: ${fileName}`);
+          }
+
+          // Save this PSD's scene as an archive (preserves all assets)
+          const archive = await tempEngine.scene.saveToArchive();
+          const pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, "");
+
+          parsedArchives.push({ archive, fileName, pageName });
+          console.log(`Parsed and saved "${pageName}" as archive`);
         } catch (error) {
-          console.error(
-            `Error processing ${file ? "PSD file" : "scene archive"} ${fileName}:`,
-            error
-          );
-          // Continue processing other files even if one fails
+          console.error(`Error parsing PSD file ${fileName}:`, error);
+          throw error;
         } finally {
           if (tempEngine) {
             try {
               await tempEngine.dispose();
             } catch (cleanupError) {
-              console.warn("Error disposing temporary engine:", cleanupError);
+              console.warn("Error disposing temp engine:", cleanupError);
             }
           }
         }
       }
 
-      if (pageStrings.length === 0) {
-        throw new Error("No PSD files were processed successfully");
+      if (parsedArchives.length === 0) {
+        throw new Error("No PSD files were parsed successfully");
       }
 
-      // Build final result: array of page archives with metadata
-      const pageArchives: Array<{ archive: Blob; fileName: string; pageName: string }> = [];
-      
-      for (let i = 0; i < pageStrings.length; i++) {
-        const { archive, fileName } = pageStrings[i];
+      // Step 2: Create a master scene and manually add pages from each PSD
+      masterEngine = await this.createTemporaryEngine();
 
-        if (!archive) {
-          console.warn(`No archive for ${fileName}, skipping`);
-          continue;
+      if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
+        throw new Error("Master engine not fully initialized");
+      }
+
+      // Create master scene with vertical layout
+      const masterScene = masterEngine.scene.create();
+      masterEngine.block.setEnum(masterScene, "scene/layout", "VerticalStack");
+      console.log("Created master multi-page scene with VerticalStack layout");
+
+      // Map to track which PSD each page came from
+      const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
+      let totalPagesAdded = 0;
+
+      // Load each PSD archive and clone its pages into the master scene
+      for (let i = 0; i < parsedArchives.length; i++) {
+        const { archive, fileName, pageName } = parsedArchives[i];
+        let tempLoadEngine: any = null;
+
+        try {
+          console.log(`Adding pages from PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
+
+          // Create a temporary engine to load this archive
+          tempLoadEngine = await this.createTemporaryEngine();
+
+          // Load the archive into the temporary engine
+          const archiveUrl = URL.createObjectURL(archive);
+          await tempLoadEngine.scene.loadFromArchiveURL(archiveUrl);
+          URL.revokeObjectURL(archiveUrl);
+
+          // Get all pages from this loaded archive
+          const pagesInArchive = tempLoadEngine.block.findByType("page");
+          console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
+
+          // Clone each page and append to the master scene
+          for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
+            const pageId = pagesInArchive[pageIdx];
+            
+            // Duplicate the page (creates a deep copy with all children)
+            const clonedPageId = tempLoadEngine.block.duplicate(pageId);
+
+            // Export the cloned page as a string
+            const pageString = await tempLoadEngine.block.exportToString(clonedPageId);
+
+            // Import the page into the master engine
+            const importedPageId = await masterEngine.block.importFromString(pageString);
+
+            // Append the imported page to the master scene
+            masterEngine.block.appendChild(masterScene, importedPageId);
+
+            // Track which PSD this page came from
+            pageSourceMap.set(totalPagesAdded, {
+              fileName,
+              psdName: pageName,
+              pageIndexInPSD: pageIdx,
+            });
+
+            totalPagesAdded++;
+            console.log(`Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
+          }
+        } catch (error) {
+          console.error(`Error adding pages from ${fileName}:`, error);
+          throw error;
+        } finally {
+          if (tempLoadEngine) {
+            try {
+              await tempLoadEngine.dispose();
+            } catch (cleanupError) {
+              console.warn("Error disposing temp load engine:", cleanupError);
+            }
+          }
         }
-
-        const pageName = fileName.replace(".psd", "").replace(/\s*\(\d+\)\s*$/, ""); // Remove " (1)" etc
-        pageArchives.push({ 
-          archive, 
-          fileName, 
-          pageName 
-        });
-        
-        console.log(`Processed page "${pageName}" - archive size: ${archive.size} bytes`);
       }
+
+      // Get final page list from master scene
+      const finalPages = masterEngine.block.findByType("page");
+      console.log(`Master scene contains ${finalPages.length} page(s) total`);
+
+      // Build accurate metadata from actual pages in the master scene
+      const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
       
-      if (pageArchives.length === 0) {
-        throw new Error("No archives were processed successfully");
+      for (let i = 0; i < finalPages.length; i++) {
+        const pageSource = pageSourceMap.get(i);
+        if (pageSource) {
+          const pageDisplayName = finalPages.length > parsedArchives.length
+            ? `${pageSource.psdName} - Page ${pageSource.pageIndexInPSD + 1}` // Multi-page PSD
+            : pageSource.psdName; // Single page per PSD
+
+          pageMetadata.push({
+            fileName: pageSource.fileName,
+            pageName: pageDisplayName,
+            pageIndex: i,
+          });
+        } else {
+          // Fallback if source mapping failed
+          pageMetadata.push({
+            fileName: `unknown-${i}`,
+            pageName: `Page ${i + 1}`,
+            pageIndex: i,
+          });
+        }
       }
 
-      console.log(`Successfully processed ${pageArchives.length} PSD file(s) into separate page archives`);
+      console.log(`Generated metadata for ${pageMetadata.length} page(s)`);
+
+      // Save the master multi-page scene
+      const sceneArchive = await masterEngine.scene.saveToArchive();
+      console.log(`Saved master scene: ${sceneArchive.size} bytes with ${pageMetadata.length} PSDs`);
 
       return {
-        pageArchives,
+        sceneArchive,
+        pageMetadata,
         messages: allMessages,
       };
     } catch (error) {
-      console.error("Error processing PSD files:", error);
+      console.error("Error processing multiple PSD files:", error);
       throw error;
+    } finally {
+      if (masterEngine) {
+        try {
+          await masterEngine.dispose();
+        } catch (cleanupError) {
+          console.warn("Error disposing master engine:", cleanupError);
+        }
+      }
     }
   }
 }

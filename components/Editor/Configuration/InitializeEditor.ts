@@ -90,51 +90,21 @@ export const InitializeEditor = async ({
           );
 
           try {
-            let storedBlob: Blob | null = null;
-            let archiveUrl: string | null = null;
-            
-            // Check for multi-page import
-            if (sceneData?.meta?.isMultiPSDImport && sceneData?.meta?.pageArchives) {
-              const currentPageIndex = sceneData?.meta?.currentPageIndex || 0;
-              const pageArchiveData = sceneData.meta.pageArchives[currentPageIndex];
-              const pageKey = `psd_archive_${contentId}_page_${currentPageIndex}`;
-              
-              // Try IndexedDB first (fast local access)
-              storedBlob = await getBlobFromIndexedDB(pageKey);
-              
-              // Fallback to server-stored archive if not in IndexedDB
-              if (!storedBlob && pageArchiveData?.archiveUrl) {
-                archiveUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/templates/${pageArchiveData.archiveUrl}`;
-                console.log(`Loading page from server: ${archiveUrl}`);
-              }
-              
-              console.log(`Loading multi-PSD page ${currentPageIndex + 1}/${sceneData.meta.pageArchives.length}`);
-              
-              // Don't remove archives - keep them for page switching
-            } else {
-              // Single page import (backwards compatibility)
-              const blobKey = `psd_archive_${contentId}`;
-              storedBlob = await getBlobFromIndexedDB(blobKey);
-            }
+            // Load the single multi-page scene archive from IndexedDB
+            const blobKey = `psd_archive_${contentId}`;
+            const storedBlob = await getBlobFromIndexedDB(blobKey);
 
             if (storedBlob) {
+              console.log(`Loading ${sceneData?.meta?.isMultiPageScene ? 'multi-page' : 'single'} scene from IndexedDB`);
+              
               // Load from IndexedDB blob
               const tempArchiveUrl = URL.createObjectURL(storedBlob);
               await cesdkInstance.current?.engine.scene.loadFromArchiveURL(tempArchiveUrl);
               URL.revokeObjectURL(tempArchiveUrl);
               hasLoadedScene = true;
-            } else if (archiveUrl) {
-              // Load from server URL
-              await cesdkInstance.current?.engine.scene.loadFromArchiveURL(archiveUrl);
-              hasLoadedScene = true;
-            }
-            
-            if (hasLoadedScene) {
-              // Only remove single-page archives (multi-page archives are kept for switching)
-              if (!sceneData?.meta?.isMultiPSDImport) {
-                const blobKey = `psd_archive_${contentId}`;
-                await removeBlobFromIndexedDB(blobKey);
-              }
+              
+              // Remove the archive from IndexedDB after successful load
+              await removeBlobFromIndexedDB(blobKey);
 
               if (sceneData?.meta?.needsFirstSave) {
                 // Use shared savePSDArchive utility function

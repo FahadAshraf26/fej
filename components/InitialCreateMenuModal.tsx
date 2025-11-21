@@ -183,45 +183,19 @@ const onCreateMenuFromPSD = async (
       return;
     }
 
-    if (!psdScene?.meta?.processedArchiveBlob && !psdScene?.meta?.isSplitFile && !psdScene?.meta?.pageArchives) {
+    if (!psdScene?.meta?.processedArchiveBlob && !psdScene?.meta?.isSplitFile) {
       throw new Error(
-        "Invalid PSD scene data. Expected processedArchiveBlob, pageArchives, or split file chunks."
+        "Invalid PSD scene data. Expected processedArchiveBlob or split file chunks."
       );
     }
 
-    // Store all page archives in IndexedDB AND upload to Supabase for persistence
+    // Store the single multi-page scene archive in IndexedDB
     const { storeBlobInIndexedDB } = await import("@Helpers/IndexedDBStorage");
-    const pageArchiveUrls: string[] = [];
     
-    if (psdScene.meta.pageArchives && psdScene.meta.pageArchives.length > 0) {
-      // Store each page archive in IndexedDB and upload to Supabase
-      for (const pageArchive of psdScene.meta.pageArchives) {
-        const pageKey = `psd_archive_${newContentId}_page_${pageArchive.pageIndex}`;
-        const archiveFileName = `${newContentId}_page_${pageArchive.pageIndex}.scene`;
-        
-        // Store in IndexedDB for immediate access
-        await storeBlobInIndexedDB(pageKey, pageArchive.archive);
-        
-        // Upload to Supabase for persistence - FAIL FAST if upload fails
-        const { error: uploadError } = await supabase.storage
-          .from("templates")
-          .upload(archiveFileName, pageArchive.archive, {
-            contentType: "application/octet-stream",
-            upsert: false,
-          });
-        
-        if (uploadError) {
-          // Critical: fail the entire operation if any archive fails to upload
-          throw new Error(`Failed to upload page archive ${pageArchive.pageIndex}: ${uploadError.message}`);
-        }
-        
-        pageArchiveUrls.push(archiveFileName);
-      }
-      console.log(`Successfully stored and uploaded ${psdScene.meta.pageArchives.length} page archives`);
-    } else if (psdScene.meta.processedArchiveBlob) {
-      // Fallback for single archive (backwards compatibility)
+    if (psdScene.meta.processedArchiveBlob) {
       const blobKey = `psd_archive_${newContentId}`;
       await storeBlobInIndexedDB(blobKey, psdScene.meta.processedArchiveBlob);
+      console.log(`Stored multi-page scene archive in IndexedDB: ${blobKey}`);
     }
 
     const sceneData = {
@@ -241,15 +215,9 @@ const onCreateMenuFromPSD = async (
           chunkUrls: psdScene.meta.chunkUrls,
           totalChunks: psdScene.meta.totalChunks,
         }),
-        ...(psdScene.meta.isMultiPSDImport && {
-          isMultiPSDImport: true,
-          pageArchives: psdScene.meta.pageArchives?.map((pa: any, idx: number) => ({
-            fileName: pa.fileName,
-            pageName: pa.pageName,
-            pageIndex: pa.pageIndex,
-            archiveUrl: pageArchiveUrls[idx], // Server-stored URL for persistence
-          })),
-          currentPageIndex: psdScene.meta.currentPageIndex || 0,
+        ...(psdScene.meta.isMultiPageScene && {
+          isMultiPageScene: true,
+          pageMetadata: psdScene.meta.pageMetadata || [],
         }),
       },
       pages: psdScene.pages,
