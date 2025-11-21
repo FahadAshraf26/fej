@@ -44,6 +44,7 @@
     "crypto-js": "^4.1.1",
     "dotenv": "^16.5.0",
     "formidable": "^3.5.4",
+    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "next": "^12.3.3",
     "nextjs-google-analytics": "^2.2.2",

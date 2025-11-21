@@ -1,3 +1,5 @@
+import JSZip from 'jszip';
+
 export class PSDProcessor {
   private static instance: PSDProcessor;
   private engine: any = null;
@@ -13,6 +15,211 @@ export class PSDProcessor {
 
   public setEngine(engine: any) {
     this.engine = engine;
+  }
+
+  /**
+   * Helper method to recursively remap URIs in an object
+   * Searches for properties that look like URIs and updates them based on the mapping
+   */
+  private remapUrisInObject(obj: any, uriMapping: Map<string, string>): void {
+    if (!obj || typeof obj !== 'object') return;
+
+    for (const key in obj) {
+      const value = obj[key];
+      
+      if (typeof value === 'string') {
+        // Check if this string is a URI that needs remapping
+        if (uriMapping.has(value)) {
+          obj[key] = uriMapping.get(value);
+          console.log(`Remapped URI in ${key}: ${value} -> ${obj[key]}`);
+        }
+      } else if (typeof value === 'object') {
+        // Recursively process nested objects
+        this.remapUrisInObject(value, uriMapping);
+      }
+    }
+  }
+
+  /**
+   * Merges multiple CESDK scene archives into a single multi-page scene archive
+   * This is done at the archive level (ZIP manipulation) to preserve all buffer assets
+   * Archive format: scene.json + resources/ directory with buffers
+   */
+  private async mergeSceneArchives(
+    archives: Array<{ archive: Blob; fileName: string; pageName: string }>
+  ): Promise<Blob> {
+    console.log(`Merging ${archives.length} scene archives at file level...`);
+
+    // Load all archives using JSZip
+    const loadedArchives = await Promise.all(
+      archives.map(async ({ archive, fileName, pageName }) => {
+        const zip = await JSZip.loadAsync(archive);
+        const sceneJsonFile = zip.file('scene.json');
+        
+        if (!sceneJsonFile) {
+          throw new Error(`No scene.json found in archive for ${fileName}`);
+        }
+        
+        const sceneJsonText = await sceneJsonFile.async('string');
+        const sceneData = JSON.parse(sceneJsonText);
+        
+        return {
+          zip,
+          sceneData,
+          fileName,
+          pageName
+        };
+      })
+    );
+
+    console.log(`Loaded ${loadedArchives.length} archives, remapping IDs...`);
+
+    // Create the merged scene structure
+    const mergedScene: any = {
+      version: loadedArchives[0].sceneData.version || '1.0',
+      blocks: [],
+      metadata: {
+        mergedFrom: archives.map(a => a.fileName),
+        pageCount: 0
+      }
+    };
+
+    // Create output ZIP
+    const outputZip = new JSZip();
+    let idOffset = 0;
+    const pageIds: number[] = [];
+
+    // Merge each archive
+    for (let archiveIdx = 0; archiveIdx < loadedArchives.length; archiveIdx++) {
+      const { zip, sceneData, fileName } = loadedArchives[archiveIdx];
+      
+      console.log(`Merging archive ${archiveIdx + 1}/${loadedArchives.length}: ${fileName}`);
+
+      // Track resource URI mappings for this archive
+      const uriMapping = new Map<string, string>();
+
+      // Copy buffer/resource files from this archive FIRST
+      const resourcesFolder = zip.folder('resources');
+      if (resourcesFolder) {
+        const resourceFiles: Array<{ path: string; file: any }> = [];
+        resourcesFolder.forEach((relativePath, file) => {
+          if (!file.dir) {
+            resourceFiles.push({ path: relativePath, file });
+          }
+        });
+        
+        // Copy all resources to output zip with unique naming
+        for (const { path, file } of resourceFiles) {
+          const data = await file.async('arraybuffer');
+          const oldUri = `resources/${path}`;
+          const uniquePath = `resources/${archiveIdx}_${path}`;
+          outputZip.file(uniquePath, data);
+          uriMapping.set(oldUri, uniquePath);
+          console.log(`Mapped resource: ${oldUri} -> ${uniquePath}`);
+        }
+      }
+
+      // Remap all block IDs in this archive to avoid collisions
+      const idMapping = new Map<number, number>();
+      let oldSceneId: number | null = null;
+      
+      if (sceneData.blocks && Array.isArray(sceneData.blocks)) {
+        // First pass: identify the old scene root (to exclude it)
+        for (const block of sceneData.blocks) {
+          if (block.type === 'scene' || block.type === '//ly.img.ubq/scene') {
+            oldSceneId = block.id;
+            console.log(`Found old scene root with ID ${oldSceneId} in ${fileName}`);
+            break;
+          }
+        }
+        
+        // Second pass: copy all blocks EXCEPT the old scene root
+        for (const block of sceneData.blocks) {
+          // Skip the old scene block - we'll create a new master scene
+          if (block.id === oldSceneId) {
+            console.log(`Skipping old scene block ${block.id}`);
+            continue;
+          }
+          
+          const oldId = block.id;
+          const newId = oldId + idOffset;
+          idMapping.set(oldId, newId);
+          
+          // Remap the block's ID
+          block.id = newId;
+          
+          // Remap parent references
+          if (block.parent !== undefined && block.parent !== null) {
+            // If parent was the old scene, set to null (will be adopted by master scene)
+            if (block.parent === oldSceneId) {
+              block.parent = null;
+              console.log(`Reset parent of block ${newId} (was scene ${oldSceneId})`);
+            } else {
+              block.parent = idMapping.get(block.parent) ?? (block.parent + idOffset);
+            }
+          }
+          
+          // Remap children references
+          if (block.children && Array.isArray(block.children)) {
+            block.children = block.children.map((childId: number) => 
+              idMapping.get(childId) ?? (childId + idOffset)
+            );
+          }
+          
+          // Update resource URIs in block properties (CRITICAL for images!)
+          if (block.properties) {
+            this.remapUrisInObject(block.properties, uriMapping);
+          }
+          
+          // Track page blocks (will be children of master scene)
+          if (block.type === 'page' || block.type === '//ly.img.ubq/page') {
+            pageIds.push(newId);
+            console.log(`Tracked page block ${newId} from ${fileName}`);
+          }
+          
+          // Add to merged blocks (excluding old scene)
+          mergedScene.blocks.push(block);
+        }
+      }
+
+      // Update ID offset for next archive
+      const maxId = Math.max(...Array.from(idMapping.values()), idOffset);
+      idOffset = maxId + 1;
+    }
+
+    // Create a single master scene block to hold all pages with VerticalStack layout
+    const sceneBlockId = idOffset++;
+    const sceneBlock = {
+      id: sceneBlockId,
+      type: '//ly.img.ubq/scene',
+      parent: null,
+      children: pageIds,
+      properties: {
+        'scene/layout': 'VerticalStack'
+      }
+    };
+    
+    // Update all page blocks to have the master scene as parent
+    for (const block of mergedScene.blocks) {
+      if (pageIds.includes(block.id)) {
+        block.parent = sceneBlockId;
+        console.log(`Set parent of page ${block.id} to master scene ${sceneBlockId}`);
+      }
+    }
+    
+    mergedScene.blocks.push(sceneBlock);
+    mergedScene.metadata.pageCount = pageIds.length;
+    
+    console.log(`Merged scene: ${mergedScene.blocks.length} blocks, ${pageIds.length} pages`);
+
+    // Save merged scene.json to output ZIP
+    outputZip.file('scene.json', JSON.stringify(mergedScene, null, 2));
+
+    // Generate the final archive blob
+    const mergedArchive = await outputZip.generateAsync({ type: 'blob' });
+    console.log(`Generated merged archive: ${mergedArchive.size} bytes`);
+
+    return mergedArchive;
   }
 
   /**
@@ -137,7 +344,6 @@ export class PSDProcessor {
     }
 
     const allMessages: any[] = [];
-    let masterEngine: any = null;
 
     try {
       // Import PSD importer utilities
@@ -215,115 +421,23 @@ export class PSDProcessor {
         throw new Error("No PSD files were parsed successfully");
       }
 
-      // Step 2: Create master engine and load all PSD archives into it (WITHIN SAME ENGINE)
-      masterEngine = await this.createTemporaryEngine();
-
-      if (!masterEngine.asset || !masterEngine.scene || !masterEngine.block) {
-        throw new Error("Master engine not fully initialized");
-      }
-
-      // Create master scene with vertical layout
-      const masterScene = masterEngine.scene.create();
-      masterEngine.block.setEnum(masterScene, "scene/layout", "VerticalStack");
-      console.log("Created master multi-page scene with VerticalStack layout");
-
-      // Map to track which PSD each page came from
-      const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
-      let totalPagesAdded = 0;
-
-      // Load each PSD archive directly into the master engine (avoids cross-engine buffer issues)
-      for (let i = 0; i < parsedArchives.length; i++) {
-        const { archive, fileName, pageName } = parsedArchives[i];
-
-        try {
-          console.log(`Loading PSD ${i + 1}/${parsedArchives.length}: ${pageName}`);
-
-          // Create a temporary scene to load this archive
-          const tempScene = masterEngine.scene.create();
-          
-          // Load the archive into the temporary scene
-          const archiveUrl = URL.createObjectURL(archive);
-          await masterEngine.scene.loadFromArchiveURL(archiveUrl);
-          URL.revokeObjectURL(archiveUrl);
-
-          // Get all pages from the loaded scene (they now exist in master engine)
-          const currentScene = masterEngine.scene.get();
-          const pagesInArchive = masterEngine.scene.getPages();
-          console.log(`Found ${pagesInArchive.length} page(s) in ${fileName}`);
-
-          // Clone each page and append to the master scene (all within same engine)
-          for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
-            const pageId = pagesInArchive[pageIdx];
-            
-            // Duplicate the page within the SAME engine (preserves all assets including buffers)
-            const clonedPageId = masterEngine.block.duplicate(pageId);
-
-            // Track which PSD this page came from
-            pageSourceMap.set(totalPagesAdded, {
-              fileName,
-              psdName: pageName,
-              pageIndexInPSD: pageIdx,
-            });
-
-            totalPagesAdded++;
-            console.log(`Duplicated page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
-          }
-
-          // Load the master scene before appending duplicated pages
-          await masterEngine.scene.load(masterScene);
-          
-          // Now get all pages from current loaded scene and move them to master scene
-          const allCurrentPages = masterEngine.scene.getPages();
-          
-          // Append all duplicated pages to master scene (appendChild automatically reparents)
-          for (let idx = pagesInArchive.length; idx < allCurrentPages.length; idx++) {
-            const duplicatedPageId = allCurrentPages[idx];
-            masterEngine.block.appendChild(masterScene, duplicatedPageId);
-            console.log(`Moved duplicated page to master scene`);
-          }
-        } catch (error) {
-          console.error(`Error adding pages from ${fileName}:`, error);
-          throw error;
-        }
-      }
-
-      // Switch to the master scene
-      await masterEngine.scene.load(masterScene);
-
-      // Get final page list from master scene
-      const finalPages = masterEngine.block.findByType("page");
-      console.log(`Master scene contains ${finalPages.length} page(s) total`);
-
-      // Build accurate metadata from actual pages in the master scene
+      // Step 2: Merge all PSD archives at the file level (preserves all assets including images)
+      console.log("Merging archives at file level to preserve buffer assets...");
+      const sceneArchive = await this.mergeSceneArchives(parsedArchives);
+      
+      // Build metadata for each page
       const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
       
-      for (let i = 0; i < finalPages.length; i++) {
-        const pageSource = pageSourceMap.get(i);
-        if (pageSource) {
-          const pageDisplayName = finalPages.length > parsedArchives.length
-            ? `${pageSource.psdName} - Page ${pageSource.pageIndexInPSD + 1}` // Multi-page PSD
-            : pageSource.psdName; // Single page per PSD
-
-          pageMetadata.push({
-            fileName: pageSource.fileName,
-            pageName: pageDisplayName,
-            pageIndex: i,
-          });
-        } else {
-          // Fallback if source mapping failed
-          pageMetadata.push({
-            fileName: `unknown-${i}`,
-            pageName: `Page ${i + 1}`,
-            pageIndex: i,
-          });
-        }
+      for (let i = 0; i < parsedArchives.length; i++) {
+        const { fileName, pageName } = parsedArchives[i];
+        pageMetadata.push({
+          fileName,
+          pageName,
+          pageIndex: i,
+        });
       }
 
       console.log(`Generated metadata for ${pageMetadata.length} page(s)`);
-
-      // Save the master multi-page scene
-      const sceneArchive = await masterEngine.scene.saveToArchive();
-      console.log(`Saved master scene: ${sceneArchive.size} bytes with ${pageMetadata.length} PSDs`);
 
       return {
         sceneArchive,
@@ -333,14 +447,6 @@ export class PSDProcessor {
     } catch (error) {
       console.error("Error processing multiple PSD files:", error);
       throw error;
-    } finally {
-      if (masterEngine) {
-        try {
-          await masterEngine.dispose();
-        } catch (cleanupError) {
-          console.warn("Error disposing master engine:", cleanupError);
-        }
-      }
     }
   }
 }
