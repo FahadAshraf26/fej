@@ -333,6 +333,54 @@ export class PSDProcessor {
 
       console.log(`Generated metadata for ${pageMetadata.length} page(s)`);
 
+      // CRITICAL: Relocate all buffer:// URIs to permanent data URIs before saving
+      console.log("Finding transient resources (buffer:// URIs) to relocate...");
+      
+      try {
+        const transientResources = await masterEngine.editor.findAllTransientResources();
+        console.log(`Found ${transientResources.length} transient buffer resources to relocate`);
+
+        for (let i = 0; i < transientResources.length; i++) {
+          const resource = transientResources[i];
+          const bufferUri = resource.uri;
+
+          try {
+            // Get the actual buffer data
+            const resourceData = await new Promise<ArrayBuffer>((resolve, reject) => {
+              masterEngine.editor.getResourceData(bufferUri, -1, (result: any) => {
+                if (result && result.data) {
+                  resolve(result.data);
+                } else {
+                  reject(new Error(`No data returned for ${bufferUri}`));
+                }
+              });
+            });
+
+            // Convert to Blob and create data URI
+            const blob = new Blob([resourceData]);
+            const dataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+
+            // Relocate buffer:// to data: URI
+            masterEngine.editor.relocateResource(bufferUri, dataUrl);
+            
+            if ((i + 1) % 10 === 0 || i === transientResources.length - 1) {
+              console.log(`Relocated ${i + 1}/${transientResources.length} resources`);
+            }
+          } catch (resourceError) {
+            console.warn(`Failed to relocate ${bufferUri}:`, resourceError);
+          }
+        }
+
+        console.log(`✅ Successfully relocated all ${transientResources.length} buffer URIs to data URIs`);
+      } catch (relocateError) {
+        console.error("Error during resource relocation:", relocateError);
+        // Continue anyway - some images may still work
+      }
+
       // Save the master multi-page scene
       const sceneArchive = await masterEngine.scene.saveToArchive();
       console.log(
