@@ -1,16 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import {
-  Box,
-  Text,
-  ThemeIcon,
-  Alert,
-  Stack,
-  Progress,
-  Group,
-  Badge,
-  Button,
-} from "@mantine/core";
+import { Box, Text, ThemeIcon, Alert, Stack, Progress, Group, Badge, Button } from "@mantine/core";
 import { IconUpload, IconFile, IconAlertCircle, IconCheck, IconX } from "@tabler/icons";
 import useUploadStore from "../../stores/upload/upload.store";
 import { getLargeFileSuggestions } from "../../helpers/PSDFileSuggestions";
@@ -37,9 +27,9 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [importStatus, setImportStatus] = useState<"idle" | "uploading" | "processing" | "success" | "error">(
-    "idle"
-  );
+  const [importStatus, setImportStatus] = useState<
+    "idle" | "uploading" | "processing" | "success" | "error"
+  >("idle");
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadId, setUploadId] = useState<string | null>(null);
@@ -138,17 +128,13 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
           );
         }, 300);
 
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: 5 } : f))
-        );
+        setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, progress: 5 } : f)));
 
         const PSDProcessorModule = await import("./PSDProcessor");
         const PSDProcessor = PSDProcessorModule.default;
         const psdProcessor = PSDProcessor.getInstance();
 
-        setFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: 10 } : f))
-        );
+        setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, progress: 10 } : f)));
 
         const processedResult = await psdProcessor.processPSDFile(file, true);
 
@@ -279,13 +265,13 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         const psdProcessor = PSDProcessor.getInstance();
 
         setMergeProgress(30);
-        
+
         // Process all PSDs into a SINGLE multi-page scene
         const inputs = fileList.map((fileItem) => ({
           file: fileItem.file,
           fileName: fileItem.file.name,
         }));
-        
+
         const processResult = await psdProcessor.processMultiplePSDFiles(inputs);
 
         setMergeProgress(90);
@@ -475,7 +461,9 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
       case "error":
         return "Import failed. Please try again.";
       case "uploading":
-        return `${files.length} file${files.length > 1 ? "s" : ""} selected. Arrange the order and create menu.`;
+        return `${files.length} file${
+          files.length > 1 ? "s" : ""
+        } selected. Arrange the order and create menu.`;
       default:
         return isDragActive
           ? "Drop your PSD file(s) here"
@@ -496,22 +484,23 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
           onDrop={handleDrop}
           onClick={importStatus === "idle" ? handleClick : undefined}
           sx={(theme) => ({
-            border: `2px dashed ${
-              isDragActive
-                ? theme.colors.orange[6]
-                : theme.colors.gray[4]
-            }`,
+            border: `2px dashed ${isDragActive ? theme.colors.orange[6] : theme.colors.gray[4]}`,
             borderRadius: theme.radius.md,
             padding: theme.spacing.xl,
             textAlign: "center",
-            cursor: disabled || isProcessing || importStatus === "uploading" ? "default" : "pointer",
-            backgroundColor: isDragActive
-              ? theme.colors.orange[0]
-              : theme.colors.gray[0],
+            cursor:
+              disabled || isProcessing || importStatus === "uploading" ? "default" : "pointer",
+            backgroundColor: isDragActive ? theme.colors.orange[0] : theme.colors.gray[0],
             transition: "all 0.2s ease",
             "&:hover": {
-              backgroundColor: disabled || isProcessing || importStatus === "uploading" ? undefined : theme.colors.orange[0],
-              borderColor: disabled || isProcessing || importStatus === "uploading" ? undefined : theme.colors.orange[6],
+              backgroundColor:
+                disabled || isProcessing || importStatus === "uploading"
+                  ? undefined
+                  : theme.colors.orange[0],
+              borderColor:
+                disabled || isProcessing || importStatus === "uploading"
+                  ? undefined
+                  : theme.colors.orange[6],
             },
           })}
         >
@@ -546,7 +535,8 @@ export const PSDImportZone: React.FC<PSDImportZoneProps> = ({
         <Box mt="md">
           <Alert color="blue" icon={<IconFile size={16} />} mb="md">
             <Text size="sm">
-              <strong>Arrange your pages:</strong> Drag and drop to reorder. Each PSD will become a page in your menu in this order.
+              <strong>Arrange your pages:</strong> Drag and drop to reorder. Each PSD will become a
+              page in your menu in this order.
             </Text>
           </Alert>
 

@@ -121,9 +121,9 @@ export class PSDProcessor {
    */
   public async processMultiplePSDFiles(
     inputs: Array<{ archive?: Blob; file?: File; fileName: string }>
-  ): Promise<{ 
+  ): Promise<{
     sceneArchive: Blob;
-    pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }>; 
+    pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }>;
     messages: any[];
   }> {
     if (typeof window === "undefined") {
@@ -228,7 +228,10 @@ export class PSDProcessor {
       console.log("Created master multi-page scene with VerticalStack layout");
 
       // Map to track which PSD each page came from
-      const pageSourceMap = new Map<number, { fileName: string; psdName: string; pageIndexInPSD: number }>();
+      const pageSourceMap = new Map<
+        number,
+        { fileName: string; psdName: string; pageIndexInPSD: number }
+      >();
       let totalPagesAdded = 0;
 
       // Load each PSD archive and clone its pages into the master scene
@@ -254,15 +257,17 @@ export class PSDProcessor {
           // Clone each page and append to the master scene
           for (let pageIdx = 0; pageIdx < pagesInArchive.length; pageIdx++) {
             const pageId = pagesInArchive[pageIdx];
-            
-            // Duplicate the page (creates a deep copy with all children)
-            const clonedPageId = tempLoadEngine.block.duplicate(pageId);
 
-            // Serialize the cloned page as a string (correct CESDK API)
-            const pageString = await tempLoadEngine.block.saveToString([clonedPageId]);
+            // // Duplicate the page (creates a deep copy with all children)
+            // const clonedPageId = tempLoadEngine.block.duplicate(pageId);
 
-            // Import the page into the master engine (correct CESDK API)
-            const importedBlockIds = await masterEngine.block.loadFromString(pageString);
+            // // Serialize the cloned page as a string (correct CESDK API)
+            const pageString = await tempLoadEngine.block.saveToArchive([pageId]);
+
+            // // Import the page into the master engine (correct CESDK API)
+            const importedBlockIds = await masterEngine.block.loadFromArchiveURL(
+              URL.createObjectURL(pageString)
+            );
             const importedPageId = importedBlockIds[0]; // First block is the page
 
             // Append the imported page to the master scene
@@ -276,7 +281,11 @@ export class PSDProcessor {
             });
 
             totalPagesAdded++;
-            console.log(`Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${pagesInArchive.length})`);
+            console.log(
+              `Added page ${totalPagesAdded} from ${fileName} (page ${pageIdx + 1}/${
+                pagesInArchive.length
+              })`
+            );
           }
         } catch (error) {
           console.error(`Error adding pages from ${fileName}:`, error);
@@ -298,13 +307,14 @@ export class PSDProcessor {
 
       // Build accurate metadata from actual pages in the master scene
       const pageMetadata: Array<{ fileName: string; pageName: string; pageIndex: number }> = [];
-      
+
       for (let i = 0; i < finalPages.length; i++) {
         const pageSource = pageSourceMap.get(i);
         if (pageSource) {
-          const pageDisplayName = finalPages.length > parsedArchives.length
-            ? `${pageSource.psdName} - Page ${pageSource.pageIndexInPSD + 1}` // Multi-page PSD
-            : pageSource.psdName; // Single page per PSD
+          const pageDisplayName =
+            finalPages.length > parsedArchives.length
+              ? `${pageSource.psdName} - Page ${pageSource.pageIndexInPSD + 1}` // Multi-page PSD
+              : pageSource.psdName; // Single page per PSD
 
           pageMetadata.push({
             fileName: pageSource.fileName,
@@ -325,7 +335,9 @@ export class PSDProcessor {
 
       // Save the master multi-page scene
       const sceneArchive = await masterEngine.scene.saveToArchive();
-      console.log(`Saved master scene: ${sceneArchive.size} bytes with ${pageMetadata.length} PSDs`);
+      console.log(
+        `Saved master scene: ${sceneArchive.size} bytes with ${pageMetadata.length} PSDs`
+      );
 
       return {
         sceneArchive,
